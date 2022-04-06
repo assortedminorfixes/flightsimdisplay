@@ -13,7 +13,6 @@ bool isReady = false;
 // you will find the data for the events and device... the vendor ID would show up as "0x1234" the pid would be "0xBEAD" and Index "1"
 // Note this example has the Indes of 1 which is the "Second" vJoy...  I already had 1 vJoy in use for Spad to send camera events to MSFS...
 // String vJoy="1234:BEAD:1";
-
 #define DEBUG
 
 template <class T>
@@ -311,6 +310,8 @@ void onVSmodeOn()
 {
     bool newVSmode = (bool) messenger.readInt16Arg();
     lights.setVerticalSpeed(newVSmode);
+    if (!newVSmode)
+        disp.setVerticalSpeed(0);
 }
 
 void onALTmodeOn()
@@ -370,19 +371,19 @@ void onRFREQAvOn()
 {
     float_t val = messenger.readFloatArg();
     disp.setRadioFrequencyActive(val);
-    sendDebugMsg(messenger.commandID(), val);
+    sendDebugMsg(messenger.commandID(), val * 1000);
 }
 void onRFREQSvOn()
 {
     float_t val = messenger.readFloatArg();
     disp.setRadioFrequencyStandby(val);
-    sendDebugMsg(messenger.commandID(), val);
+    sendDebugMsg(messenger.commandID(), val * 1000);
 }
 void onRBARvOn()
 {
     float_t val = messenger.readFloatArg();
     disp.setBarometer(val);
-    sendDebugMsg(messenger.commandID(), val);
+    sendDebugMsg(messenger.commandID(), val * 100);
 }
 void attachCommandCallbacks()
 {
@@ -436,6 +437,11 @@ void updateRadioSource(uint8_t selection)
     messenger.sendCmdArg(rRFREQSv);       // CMDID value defined at the top as "26" this will be the DATA channel
     messenger.sendCmdArg(nav_subscribe[selection][1]);
     messenger.sendCmdEnd();
+
+    #ifdef DEBUG
+    String msg = F("Radio change: ");
+    disp.printDebug(msg + selection);
+    #endif
 }
 
 void updateCourseSource(uint8_t selection)

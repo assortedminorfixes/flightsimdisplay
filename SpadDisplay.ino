@@ -15,6 +15,8 @@
 #include "lights.hh"
 #include "featherwing_touch.hh"
 
+#define DEBUG
+
 Display disp{};
 LightController lights{};
 
@@ -64,5 +66,10 @@ void loop()
 
   disp.redraw();
   lights.update();
+
+  #ifdef DEBUG
+  if (isReady)
+    disp.printMem();
+  #endif
 
 } // End of the Main Loop

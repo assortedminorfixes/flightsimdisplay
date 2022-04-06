@@ -1,4 +1,5 @@
 #ifndef FEATHERWING_TOUCH_H
+#define FEATHERWING_TOUCH_H
 
 #ifdef ESP8266
 #define STMPE_CS 16

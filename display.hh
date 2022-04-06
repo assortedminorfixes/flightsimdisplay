@@ -25,7 +25,7 @@ class Display {
       GFXcanvas1 cNum;
       GFXcanvas1 cNumLarge;
       GFXcanvas1 cCenter;
-
+      const char deg[1]  = {0xB0};
       struct NAVData
       {
          int32_t alt = 0;
@@ -74,7 +74,8 @@ class Display {
       void drawRadioActive();
       void drawRadioStandby();
       void drawBarometer();
-
+      GFXcanvas1 trimDecimal(float_t num, uint8_t padding, uint8_t decimals, int x, int y, const GFXfont *font);
+      String getStringValue(String data, char separator, int index);
    // Define TFT
    public:
       
@@ -100,7 +101,8 @@ class Display {
       void setActiveRadio(uint8_t radio);
       void setBarometer(float_t baro);
       void lastCommand(uint8_t command, int32_t value);
-
+      void printDebug(String msg);
+      void printMem();
 };
 
 extern Display disp;
