@@ -84,9 +84,7 @@ int freeMemory() {
 static const char *const RADIO_BUTTON_LABEL[] = {"NAV1", "NAV2", "COM1", "COM2",
                                                  "ADF"};
 
-Display::Display() : cNum(CANVAS_NUM_W, CANVAS_NUM_H),
-                     cNumLarge(CANVAS_NUM_LARGE_W, CANVAS_NUM_LARGE_H),
-                     cCenter(CANVAS_CENTER_W, CANVAS_CENTER_H),
+Display::Display() : cCenter(CANVAS_CENTER_W, CANVAS_CENTER_H),
                      lcd(TFT_CS, TFT_DC, TFT_RST),
                      ts(STMPE_CS)
 {
@@ -95,7 +93,7 @@ Display::Display() : cNum(CANVAS_NUM_W, CANVAS_NUM_H),
 void Display::initDisplay()
 {
     // LCD SETUP
-    lcd.begin(12000000UL);
+    lcd.begin();
     lcd.fillScreen(HX8357_BLACK); // initialize the lcd
     lcd.setRotation(0);
     lcd.setTextSize(1);
@@ -262,14 +260,14 @@ void Display::setAltitude(int32_t alt)
 
 void Display::drawAltitude()
 {
-    cNum.fillScreen(HX8357_BLACK);
-    cNum.setFont(&B612Mono_Regular18pt7b);
-    cNum.setCursor(CANVAS_NUM_UL_X, CANVAS_NUM_UL_Y);
+    GFXcanvas1 canvas(CANVAS_NUM_W, CANVAS_NUM_H);
+    canvas.setFont(&B612Mono_Regular18pt7b);
+    canvas.setCursor(CANVAS_NUM_UL_X, CANVAS_NUM_UL_Y);
     if (nav_data.alt != 0)
-        cNum.printf("%5i", nav_data.alt);
+        canvas.printf("%5i", nav_data.alt);
     else
-        cNum.printf("-----", nav_data.alt);
-    lcd.drawBitmap(DATA_ALT_POS_X, DATA_ALT_POS_Y, cNum.getBuffer(), CANVAS_NUM_W, CANVAS_NUM_H, HX8357_WHITE, HX8357_BLACK);
+        canvas.printf("-----", nav_data.alt);
+    lcd.drawBitmap(DATA_ALT_POS_X, DATA_ALT_POS_Y, canvas.getBuffer(), CANVAS_NUM_W, CANVAS_NUM_H, HX8357_WHITE, HX8357_BLACK);
     update.alt = false;
 }
 
@@ -281,16 +279,16 @@ void Display::setVerticalSpeed(int16_t vs)
 
 void Display::drawVerticalSpeed()
 {
-    cNum.fillScreen(HX8357_BLACK);
-    cNum.setFont(&B612Mono_Regular18pt7b);
-    cNum.setCursor(CANVAS_NUM_UL_X, CANVAS_NUM_UL_Y);
+    GFXcanvas1 canvas(CANVAS_NUM_W, CANVAS_NUM_H);
+    canvas.setFont(&B612Mono_Regular18pt7b);
+    canvas.setCursor(CANVAS_NUM_UL_X, CANVAS_NUM_UL_Y);
     if (nav_data.vs != 0) {
-        cNum.printf("%5i", nav_data.vs);
-        lcd.drawBitmap(DATA_VS_POS_X, DATA_VS_POS_Y, cNum.getBuffer(), CANVAS_NUM_W, CANVAS_NUM_H, HX8357_CYAN, HX8357_BLACK);
+        canvas.printf("%5i", nav_data.vs);
+        lcd.drawBitmap(DATA_VS_POS_X, DATA_VS_POS_Y, canvas.getBuffer(), CANVAS_NUM_W, CANVAS_NUM_H, HX8357_CYAN, HX8357_BLACK);
     }
     else {
-        cNum.printf("-----");
-        lcd.drawBitmap(DATA_VS_POS_X, DATA_VS_POS_Y, cNum.getBuffer(), CANVAS_NUM_W, CANVAS_NUM_H, HX8357_CYAN, HX8357_BLACK);
+        canvas.printf("-----");
+        lcd.drawBitmap(DATA_VS_POS_X, DATA_VS_POS_Y, canvas.getBuffer(), CANVAS_NUM_W, CANVAS_NUM_H, HX8357_CYAN, HX8357_BLACK);
     }
     update.vs = false;
 }
@@ -362,16 +360,16 @@ void Display::setTransponderCode(int16_t xpdr)
 
 void Display::drawTransponderCode()
 {
-    cNum.fillScreen(HX8357_BLACK);
-    cNum.setFont(&B612Mono_Regular18pt7b);
-    cNum.setCursor(CANVAS_NUM_UL_X, CANVAS_NUM_UL_Y);
+    GFXcanvas1 canvas(CANVAS_NUM_W, CANVAS_NUM_H);
+    canvas.setFont(&B612Mono_Regular18pt7b);
+    canvas.setCursor(CANVAS_NUM_UL_X, CANVAS_NUM_UL_Y);
     if (radio.xpdr != 0) {
-        cNum.printf("%04i", radio.xpdr);
+        canvas.printf("%04i", radio.xpdr);
     }
     else {
-        cNum.printf("----");
+        canvas.printf("----");
     }
-    lcd.drawBitmap(DATA_XPDR_POS_X, DATA_XPDR_POS_Y, cNum.getBuffer(), CANVAS_NUM_W, CANVAS_NUM_H, HX8357_WHITE, HX8357_BLACK);
+    lcd.drawBitmap(DATA_XPDR_POS_X, DATA_XPDR_POS_Y, canvas.getBuffer(), CANVAS_NUM_W, CANVAS_NUM_H, HX8357_WHITE, HX8357_BLACK);
     update.xpdr = false;
 }
 
@@ -420,12 +418,6 @@ void Display::drawRadioStandby()
     GFXcanvas1 canv = this->trimDecimal(radio.freq.standby, 3, 3, CANVAS_NUM_UL_X, CANVAS_NUM_UL_Y, &B612Mono_Regular18pt7b);
     lcd.drawBitmap(DATA_RADIO_STANDBY_POS_X, DATA_RADIO_STANDBY_POS_Y, canv.getBuffer(), CANVAS_NUM_W, CANVAS_NUM_H, HX8357_CYAN, HX8357_BLACK);
     update.radio_standby = false;
-}
-
-void Display::printSample()
-{
-
-
 }
 
 void Display::lastCommand(uint8_t command, int32_t val) {

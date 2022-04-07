@@ -22,8 +22,6 @@ class TouchEvent {
 class Display {
 
    private:
-      GFXcanvas1 cNum;
-      GFXcanvas1 cNumLarge;
       GFXcanvas1 cCenter;
       const char deg[1]  = {0xB0};
       struct NAVData
@@ -83,7 +81,6 @@ class Display {
       Adafruit_HX8357 lcd;
       Adafruit_STMPE610 ts;
       void initDisplay();
-      void printSample();
       void printButtons(uint8_t active = 0);
       void printStatic();
       void startConfig();
