@@ -1,14 +1,15 @@
 /*
- Spad.Next Serial Interface v1 Simple Autopilot by Les O'Reilly .
- Using I2C 2004 LCD, 6 Position Rotary Switch, Rotary Encoder with Button, 8 AP Function buttons
+ Inspired by Spad.Next Serial Interface v1 Simple Autopilot by Les O'Reilly .
+ Using Adafruit Feather with 3.5" Touch Wing.
+ Display is 'passive' with exception of touch to change radio and 
+ Button inputs are separate using a Leo Bodnar BBI-32.
 
- //Encoder code by Ben Buxton... This is my Go To for encoders...always perfect!!
- //More info: http://www.buxtronix.net/2011/10/rotary-encoders-done-properly.html
+ Current version is extensively using the SUBCRIBE patten in Spad.Next Serial.
+ Data Values used can be found in messaging.cpp; it is using Simconnect values 
+ to improve compatibility.
 
-// SPAD.neXt >= 0.9.10.13 ... Should work with earlier however when I did all this modification this is the version I was On
-// SPAD Serial Protocol Version 1  (as of May 8, 2021 there is only version 1 but the future could have changes...)
-// Documentation on the Spad Serial Protocol is found here ----  https://github.com/c0nnex/SPAD.neXt/wiki/Serial-Connection
-// For now we will need to use vJoy for buttons and Script Panel for Display Data
+ Display is based on the B612 font (https://github.com/polarsys/b612), converted for
+ use with Adafruit GFX using fontconvert.
 */
 #include "display.hh"
 #include "messaging.hh"
@@ -31,7 +32,7 @@ void setup()
 {
 
   // 115200 is typically the maximum speed for serial over USB
-  Serial.begin(9600);
+  Serial.begin(115200);
 
   disp.initDisplay();
 
