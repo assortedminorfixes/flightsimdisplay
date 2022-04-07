@@ -8,11 +8,6 @@ CmdMessenger messenger(Serial);
 
 bool isReady = false;
 
-// vJoy Device ID to use...There is a way to confirm this but it should be the same for everyone...
-// vid:pid:index ....  Example here when you copy vJoy Entire Device (after making events in your profile...) Then paste in Notepad
-// you will find the data for the events and device... the vendor ID would show up as "0x1234" the pid would be "0xBEAD" and Index "1"
-// Note this example has the Indes of 1 which is the "Second" vJoy...  I already had 1 vJoy in use for Spad to send camera events to MSFS...
-// String vJoy="1234:BEAD:1";
 #define DEBUG
 
 template <class T>
