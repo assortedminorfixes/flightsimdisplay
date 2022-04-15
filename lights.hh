@@ -2,17 +2,18 @@
 #define LIGHTS_H
 
 #include "Arduino.h"
+#include "Adafruit_NeoPixel.h"
 
-#define PIN_AP 18
-#define PIN_HDG 17
-#define PIN_NAV 16
-#define PIN_ALT 15
-#define PIN_VS 11
-#define PIN_APR 12
-#define PIN_BACKLIGHT 13
+#define PIXEL_PIN 14
+#define PIXEL_AP 0
+#define PIXEL_HDG 1
+#define PIXEL_NAV 2
+#define PIXEL_ALT 3
+#define PIXEL_VS 4
+#define PIXEL_APR 5
 
-#define LIGHT_BRIGHT 192
-#define LIGHT_DIM 8
+#define LIGHT_BRIGHT 128
+#define LIGHT_DIM 4
 #define LIGHT_BACKLIGHT 16
 #define LIGHT_OFF 0
 
@@ -26,9 +27,12 @@ enum LightStyle {
 class LightController {
     
     private:
-        void updatePinToStyle(uint8_t pin, LightStyle style);
+        Adafruit_NeoPixel strip;
+        void colorWipe(uint32_t c, uint8_t wait);
+        void updatePinToStyle(uint8_t pixel, LightStyle style);
 
     public:
+        LightController();
         void initLights();
         void update();
         void setAutopilot(LightStyle style);
