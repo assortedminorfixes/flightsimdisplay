@@ -65,12 +65,14 @@ void loop()
     }
   }
 
-  disp.redraw();
-  lights.update();
+  if (isReady) {
+    disp.redraw();
+    lights.update();
 
-  #ifdef DEBUG
-  if (isReady)
-    disp.printMem();
-  #endif
+    #ifdef DEBUG
+      disp.printMem();
+    #endif
 
+  }
+  
 } // End of the Main Loop

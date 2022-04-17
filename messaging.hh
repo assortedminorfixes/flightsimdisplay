@@ -12,6 +12,7 @@ enum : byte
     kSimCommand = 4, // Send Event to Simulation         ... Documentation lists as "Command:4"
                      // Command IDs 5-9 are Reserved.
                      // Command IDs 10-49 are for Data Updates.  Where we "expose/subscibe" to data to process in our sketch..
+    kInput = 8,
     rAPm = 10,       // CMDID for exposed data to SPAD.neXt.  We will see the data later as a Local Variable in Spad.Next
     rFDm = 11,       //
     rHDGm = 12,      //
@@ -33,6 +34,12 @@ enum : byte
     sRADIOs = 28,    //
     rRFREQAv = 29,   //
     rRFREQSv = 30,   //
+};
+
+enum : byte
+{
+    iRadioSel = 1,
+    iCrsSel = 2,
 };
 
 const char *const nav_subscribe[5][2] PROGMEM = {{"SIMCONNECT:NAV ACTIVE FREQUENCY:1","SIMCONNECT:NAV STANDBY FREQUENCY:1"}, 
