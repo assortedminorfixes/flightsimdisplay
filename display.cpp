@@ -234,21 +234,21 @@ void Display::redraw()
 {
     if (update.alt)
         drawAltitude();
-    if (update.hdg)
+    else if (update.hdg)
         drawHeading();
-    if (update.crs)
+    else if (update.crs)
         drawCourse();
-    if (update.vs)
+    else if (update.vs)
         drawVerticalSpeed();
-    if (update.xpdr)
+    else if (update.xpdr)
         drawTransponderCode();
-    if (update.radio_buttons)
+    else if (update.radio_buttons)
         printButtons(radio.sel);
-    if (update.radio_active)
+    else if (update.radio_active)
         drawRadioActive();
-    if (update.radio_standby)
+    else if (update.radio_standby)
         drawRadioStandby();
-    if (update.baro)
+    else if (update.baro)
         drawBarometer();
 }
 
@@ -408,14 +408,26 @@ void Display::setRadioFrequencyStandby(float_t freq)
 
 void Display::drawRadioActive()
 {
-    GFXcanvas1 canv = this->trimDecimal(radio.freq.active, 3, 3, CANVAS_NUM_UL_X, CANVAS_NUM_UL_Y, &B612Mono_Regular18pt7b);
+    uint8_t frac_digits = 3;
+    if (radio.sel <= 1)
+        frac_digits = 2;
+    else if (radio.sel == 4)
+        frac_digits = 1;
+
+    GFXcanvas1 canv = this->trimDecimal(radio.freq.active, 3, frac_digits, CANVAS_NUM_UL_X, CANVAS_NUM_UL_Y, &B612Mono_Regular18pt7b);
     lcd.drawBitmap(DATA_RADIO_ACT_POS_X, DATA_RADIO_ACT_POS_Y, canv.getBuffer(), CANVAS_NUM_W, CANVAS_NUM_H, HX8357_WHITE, HX8357_BLACK);
     update.radio_active = false;
 }
 
 void Display::drawRadioStandby()
 {
-    GFXcanvas1 canv = this->trimDecimal(radio.freq.standby, 3, 3, CANVAS_NUM_UL_X, CANVAS_NUM_UL_Y, &B612Mono_Regular18pt7b);
+    uint8_t frac_digits = 3;
+    if (radio.sel <= 1)
+        frac_digits = 2;
+    else if (radio.sel == 4)
+        frac_digits = 1;
+
+    GFXcanvas1 canv = this->trimDecimal(radio.freq.standby, 3, frac_digits, CANVAS_NUM_UL_X, CANVAS_NUM_UL_Y, &B612Mono_Regular18pt7b);
     lcd.drawBitmap(DATA_RADIO_STANDBY_POS_X, DATA_RADIO_STANDBY_POS_Y, canv.getBuffer(), CANVAS_NUM_W, CANVAS_NUM_H, HX8357_CYAN, HX8357_BLACK);
     update.radio_standby = false;
 }
