@@ -10,6 +10,8 @@ bool isReady = false;
 bool isConfig = false;
 bool isPowerOn = false;
 bool isDisplay = false;
+unsigned long subscribeTime = 0;
+uint8_t subscribeIndex = 0;
 
 #define DEBUG
 
@@ -76,11 +78,12 @@ void onIdentifyRequest()
     }
     if (strcmp(szRequest, "CONFIG") == 0)
     {
-        disp.startConfig();
+        disp.printSplash(F("Configuring"));
         isReady = false;
         isConfig = false;
         isPowerOn = false;
         isDisplay = false;
+        subscribeIndex = 0;
 
         messenger.sendCmdStart(kCommand);
         messenger.sendCmdArg("OPTION");
@@ -89,8 +92,6 @@ void onIdentifyRequest()
         messenger.sendCmdArg("CMD_COOLDOWN=" + String(200));
         messenger.sendCmdArg("DATA_COOLDOWN=" + String(75));
         messenger.sendCmdArg("NO_DISPLAY_CLEAR=" + String(1));
-        messenger.sendCmdArg("PID=LARSLL");
-        messenger.sendCmdArg("VID=SIMDISPLAY");
         messenger.sendCmdEnd();
 
         // Expose Course selector ... Mode..
@@ -135,189 +136,47 @@ void onEvent()
             isPowerOn = true;
         }
     }
-    else if (strcmp(szRequest, "PROFILECHANGED") == 0) {
-        char* str = messenger.readStringArg();
+    else if (strcmp(szRequest, "PROFILECHANGED") == 0)
+    {
+        char *str = messenger.readStringArg();
         return;
     }
-    else if (strcmp(szRequest, "PAGE") == 0) {
-        char* uid = messenger.readStringArg();
+    else if (strcmp(szRequest, "PAGE") == 0)
+    {
+        char *uid = messenger.readStringArg();
         uint8_t pagenum = messenger.readInt16Arg();
-        char* pagename = messenger.readStringArg();
+        char *pagename = messenger.readStringArg();
         return;
     }
-
     else if (strcmp(szRequest, "START") == 0)
     {
-        delay(MESSAGING_DELAY);
-
+        disp.printSplash(F("Starting..."));
+        isDisplay = false;
+        subscribeTime = millis() + MESSAGING_START_DELAY;
         disp.setActiveRadio(0);
-
-        // Expose AP Mode ... Mode..
-        messenger.sendCmdStart(kCommand);     // This is a "1" or Command:1 from Spad list
-        messenger.sendCmdArg(F("SUBSCRIBE")); // Subcommand..ADD - SUBSCRIBE - UNSUBSCRIBE - EMULATE
-        messenger.sendCmdArg(rAPm);
-        messenger.sendCmdArg(F("SIMCONNECT:AUTOPILOT MASTER"));
-        messenger.sendCmdEnd();
-
-        delay(MESSAGING_DELAY);
-
-        // Expose FD Mode ... Mode..
-        messenger.sendCmdStart(kCommand);     // This is a "1" or Command:1 from Spad list
-        messenger.sendCmdArg(F("SUBSCRIBE")); // Subcommand..ADD - SUBSCRIBE - UNSUBSCRIBE - EMULATE
-        messenger.sendCmdArg(rFDm);
-        messenger.sendCmdArg(F("SIMCONNECT:AUTOPILOT FLIGHT DIRECTOR ACTIVE"));
-        messenger.sendCmdEnd();
-
-        delay(MESSAGING_DELAY);
-
-        // Expose HDG Mode ... Mode..
-        messenger.sendCmdStart(kCommand);     // This is a "1" or Command:1 from Spad list
-        messenger.sendCmdArg(F("SUBSCRIBE")); // Subcommand..ADD - SUBSCRIBE - UNSUBSCRIBE - EMULATE
-        messenger.sendCmdArg(rHDGm);
-        messenger.sendCmdArg(F("SIMCONNECT:AUTOPILOT HEADING LOCK"));
-        messenger.sendCmdEnd();
-
-        delay(MESSAGING_DELAY);
-
-        // Expose NAV Mode ... Mode..
-        messenger.sendCmdStart(kCommand);     // This is a "1" or Command:1 from Spad list
-        messenger.sendCmdArg(F("SUBSCRIBE")); // Subcommand..ADD - SUBSCRIBE - UNSUBSCRIBE - EMULATE
-        messenger.sendCmdArg(rNAVm);
-        messenger.sendCmdArg(F("SIMCONNECT:AUTOPILOT NAV1 LOCK"));
-        messenger.sendCmdEnd();
-
-        delay(MESSAGING_DELAY);
-
-        // Expose ALT Mode ... Mode..
-        messenger.sendCmdStart(kCommand);     // This is a "1" or Command:1 from Spad list
-        messenger.sendCmdArg(F("SUBSCRIBE")); // Subcommand..ADD - SUBSCRIBE - UNSUBSCRIBE - EMULATE
-        messenger.sendCmdArg(rALTm);
-        messenger.sendCmdArg(F("SIMCONNECT:AUTOPILOT ALTITUDE LOCK"));
-        messenger.sendCmdEnd();
-
-        delay(MESSAGING_DELAY);
-
-        // Expose IAS Mode ... Mode..
-        messenger.sendCmdStart(kCommand);     // This is a "1" or Command:1 from Spad list
-        messenger.sendCmdArg(F("SUBSCRIBE")); // Subcommand..ADD - SUBSCRIBE - UNSUBSCRIBE - EMULATE
-        messenger.sendCmdArg(rIASm);
-        messenger.sendCmdArg(F("SIMCONNECT:AUTOPILOT AIRSPEED HOLD"));
-        messenger.sendCmdEnd();
-
-        delay(MESSAGING_DELAY);
-
-        // Expose VS Mode ... Mode..
-        messenger.sendCmdStart(kCommand);     // This is a "1" or Command:1 from Spad list
-        messenger.sendCmdArg(F("SUBSCRIBE")); // Subcommand..ADD - SUBSCRIBE - UNSUBSCRIBE - EMULATE
-        messenger.sendCmdArg(rVSm);
-        messenger.sendCmdArg(F("SIMCONNECT:AUTOPILOT VERTICAL HOLD"));
-        messenger.sendCmdEnd();
-
-        delay(MESSAGING_DELAY);
-
-        // Expose APR Mode ... Mode..
-        messenger.sendCmdStart(kCommand);     // This is a "1" or Command:1 from Spad list
-        messenger.sendCmdArg(F("SUBSCRIBE")); // Subcommand..ADD - SUBSCRIBE - UNSUBSCRIBE - EMULATE
-        messenger.sendCmdArg(rAPRm);
-        messenger.sendCmdArg(F("SIMCONNECT:AUTOPILOT APPROACH HOLD"));
-        messenger.sendCmdEnd();
-
-        delay(MESSAGING_DELAY);
-
-        // Expose REV Mode ... Mode..
-        messenger.sendCmdStart(kCommand);     // This is a "1" or Command:1 from Spad list
-        messenger.sendCmdArg(F("SUBSCRIBE")); // Subcommand..ADD - SUBSCRIBE - UNSUBSCRIBE - EMULATE
-        messenger.sendCmdArg(rREVm);
-        messenger.sendCmdArg(F("SIMCONNECT:AUTOPILOT BACKCOURSE HOLD"));
-        messenger.sendCmdEnd();
-
-        delay(MESSAGING_DELAY);
-
-        // Subscribe ALT Value
-        messenger.sendCmdStart(kCommand);     // This is a "1" or Command:1 from Spad list
-        messenger.sendCmdArg(F("SUBSCRIBE")); // Subcommand..ADD - SUBSCRIBE - UNSUBSCRIBE - EMULATE
-        messenger.sendCmdArg(rALTv);
-        messenger.sendCmdArg(F("SIMCONNECT:AUTOPILOT ALTITUDE LOCK VAR"));
-        messenger.sendCmdEnd();
-
-        delay(MESSAGING_DELAY);
-
-        // Subscribe VS Value
-        messenger.sendCmdStart(kCommand);     // This is a "1" or Command:1 from Spad list
-        messenger.sendCmdArg(F("SUBSCRIBE")); // Subcommand..ADD - SUBSCRIBE - UNSUBSCRIBE - EMULATE
-        messenger.sendCmdArg(rVSv);
-        messenger.sendCmdArg(F("SIMCONNECT:AUTOPILOT VERTICAL HOLD VAR"));
-        messenger.sendCmdEnd();
-
-        delay(MESSAGING_DELAY);
-
-        // Subscribe IAS Value
-        messenger.sendCmdStart(kCommand);     // This is a "1" or Command:1 from Spad list
-        messenger.sendCmdArg(F("SUBSCRIBE")); // Subcommand..ADD - SUBSCRIBE - UNSUBSCRIBE - EMULATE
-        messenger.sendCmdArg(rIASv);
-        messenger.sendCmdArg(F("SIMCONNECT:AUTOPILOT AIRSPEED HOLD VAR"));
-        messenger.sendCmdEnd();
-
-        delay(MESSAGING_DELAY);
-
-        // Subscribe HDG Value
-        messenger.sendCmdStart(kCommand);     // This is a "1" or Command:1 from Spad list
-        messenger.sendCmdArg(F("SUBSCRIBE")); // Subcommand..ADD - SUBSCRIBE - UNSUBSCRIBE - EMULATE
-        messenger.sendCmdArg(rHDGv);
-        messenger.sendCmdArg(F("SIMCONNECT:AUTOPILOT HEADING LOCK DIR"));
-        messenger.sendCmdEnd();
-
-        delay(MESSAGING_DELAY);
-
-        // Subscribe CRS Value
-        messenger.sendCmdStart(kCommand);       // This is a "1" or Command:1 from Spad list
-        messenger.sendCmdArg(F("SUBSCRIBE"));   // Subcommand..ADD - SUBSCRIBE - UNSUBSCRIBE - EMULATE
-        messenger.sendCmdArg(rCRSv);            // CMDID value defined at the top as "25" this will be the DATA channel
-        messenger.sendCmdArg(crs_subscribe[0]); // will become "SERIAL:<guid>/AP/CRSval"
-        messenger.sendCmdEnd();
-
-        delay(MESSAGING_DELAY);
-
-        // Subscribe TXPDR Value
-        messenger.sendCmdStart(kCommand);     // This is a "1" or Command:1 from Spad list
-        messenger.sendCmdArg(F("SUBSCRIBE")); // Subcommand..ADD - SUBSCRIBE - UNSUBSCRIBE - EMULATE
-        messenger.sendCmdArg(rTXPDRc);
-        messenger.sendCmdArg(F("SIMCONNECT:TRANSPONDER CODE:1"));
-        messenger.sendCmdEnd();
-
-        delay(MESSAGING_DELAY);
-
-        // Subscribe to BAR Value
-        messenger.sendCmdStart(kCommand);     // This is a "1" or Command:1 from Spad list
-        messenger.sendCmdArg(F("SUBSCRIBE")); // Subcommand..ADD - SUBSCRIBE - UNSUBSCRIBE - EMULATE
-        messenger.sendCmdArg(rBARv);
-        messenger.sendCmdArg(F("SIMCONNECT:KOHLSMAN SETTING HG"));
-        messenger.sendCmdEnd();
-
-        delay(MESSAGING_DELAY);
-
-        // Subscribe Radio Active Frequency
-        messenger.sendCmdStart(kCommand);     // This is a "1" or Command:1 from Spad list
-        messenger.sendCmdArg(F("SUBSCRIBE")); // Subcommand..ADD - SUBSCRIBE - UNSUBSCRIBE - EMULATE
-        messenger.sendCmdArg(rRFREQAv);
-        messenger.sendCmdArg(nav_subscribe[0][0]);
-        messenger.sendCmdEnd();
-
-        delay(MESSAGING_DELAY);
-
-        // Subscribe Radio Active Frequency
-        messenger.sendCmdStart(kCommand);     // This is a "1" or Command:1 from Spad list
-        messenger.sendCmdArg(F("SUBSCRIBE")); // Subcommand..ADD - SUBSCRIBE - UNSUBSCRIBE - EMULATE
-        messenger.sendCmdArg(rRFREQSv);
-        messenger.sendCmdArg(nav_subscribe[0][1]);
-        messenger.sendCmdEnd();
-
-        isReady = true; // This is where we changed that Variable we declared up top now that Config is done.
-
     }
 }
 
-//  Now you need to figure out how to read all of the values back and then write them to the display.....
+void subscribeNextData()
+{
+
+    // Expose AP Mode ... Mode..
+    messenger.sendCmdStart(kCommand);     // This is a "1" or Command:1 from Spad list
+    messenger.sendCmdArg(F("SUBSCRIBE")); // Subcommand..ADD - SUBSCRIBE - UNSUBSCRIBE - EMULATE
+    messenger.sendCmdArg(subscriptions[subscribeIndex].cmd);
+    messenger.sendCmdArg(subscriptions[subscribeIndex].data);
+    messenger.sendCmdEnd();
+
+#ifdef DEBUG
+    disp.printDebug(String(subscriptions[subscribeIndex].data).substring(0, 24));
+#endif
+
+    subscribeIndex++;
+
+    if (subscribeIndex == SUBSCRIPTIONS)
+        isReady = true;
+
+}
 
 // Callback to perform some action
 

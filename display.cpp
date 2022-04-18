@@ -170,13 +170,13 @@ TouchEvent Display::processTouch()
     }
 }
 
-void Display::startConfig()
+void Display::printSplash(String str)
 {
     lcd.fillScreen(HX8357_BLACK);
     cCenter.fillScreen(HX8357_BLACK);
     cCenter.setFont(&B612_Bold16pt7b);
     cCenter.setCursor(5, 50);
-    cCenter.print(F("Configuring"));
+    cCenter.print(str);
     lcd.drawBitmap(CENTER_LABEL_POS_X, CENTER_LABEL_POS_Y, cCenter.getBuffer(), CANVAS_CENTER_W, CANVAS_CENTER_H, HX8357_WHITE);
 }
 

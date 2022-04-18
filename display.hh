@@ -83,7 +83,7 @@ class Display {
       void initDisplay();
       void printButtons(uint8_t active = 0);
       void printStatic();
-      void startConfig();
+      void printSplash(String str);
       void redraw();
       TouchEvent processTouch();
 

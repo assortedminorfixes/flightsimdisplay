@@ -49,9 +49,19 @@ void loop()
   // Process incoming serial data, and perform callbacks
   messenger.feedinSerialData();
 
+  if (isPowerOn && isConfig && !isReady && (subscribeTime > 0))
+  {
+    if (millis() > subscribeTime)
+    {
+      subscribeNextData();
+    }
+    else
+      disp.printDebug("Waiting: " + String(subscribeTime - millis()));
+  }
+
   if (isPowerOn && isReady)
   {
-    
+
     TouchEvent te = disp.processTouch();
     if ((millis() - state.last_touch) > 500 && (te.event != TouchEventType::NO_TOUCH))
     {

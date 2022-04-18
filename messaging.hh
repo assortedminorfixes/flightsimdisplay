@@ -4,6 +4,7 @@
 #include <CmdMessenger.h> // CmdMessenger ... v4.2 was used when making this sketch
 
 #define MESSAGING_DELAY 50
+#define MESSAGING_START_DELAY 2500
 
 enum : byte
 {
@@ -15,27 +16,27 @@ enum : byte
                      // Command IDs 5-9 are Reserved.
                      // Command IDs 10-49 are for Data Updates.  Where we "expose/subscibe" to data to process in our sketch..
     kInput = 8,
-    rAPm = 10,       // CMDID for exposed data to SPAD.neXt.  We will see the data later as a Local Variable in Spad.Next
-    rFDm = 11,       //
-    rHDGm = 12,      //
-    rNAVm = 13,      //
-    rALTm = 14,      //
-    rIASm = 15,      //
-    rVSm = 16,       //
-    rAPRm = 17,      //
-    rREVm = 18,      //
-    sCRSs = 19,      //
-    rAVMv = 20,      // UNUSED
-    rALTv = 21,      //
-    rVSv = 22,       //
-    rIASv = 23,      //
-    rHDGv = 24,      //
-    rCRSv = 25,      //
-    rTXPDRc = 26,    //
-    rBARv = 27,      //
-    sRADIOs = 28,    //
-    rRFREQAv = 29,   //
-    rRFREQSv = 30,   //
+    rAPm = 10,     // CMDID for exposed data to SPAD.neXt.  We will see the data later as a Local Variable in Spad.Next
+    rFDm = 11,     //
+    rHDGm = 12,    //
+    rNAVm = 13,    //
+    rALTm = 14,    //
+    rIASm = 15,    //
+    rVSm = 16,     //
+    rAPRm = 17,    //
+    rREVm = 18,    //
+    sCRSs = 19,    //
+    rAVMv = 20,    // UNUSED
+    rALTv = 21,    //
+    rVSv = 22,     //
+    rIASv = 23,    //
+    rHDGv = 24,    //
+    rCRSv = 25,    //
+    rTXPDRc = 26,  //
+    rBARv = 27,    //
+    sRADIOs = 28,  //
+    rRFREQAv = 29, //
+    rRFREQSv = 30, //
 };
 
 enum : byte
@@ -44,22 +45,48 @@ enum : byte
     iCrsSel = 2,
 };
 
-const char *const nav_subscribe[5][2] PROGMEM = {{"SIMCONNECT:NAV ACTIVE FREQUENCY:1","SIMCONNECT:NAV STANDBY FREQUENCY:1"}, 
-                                                {"SIMCONNECT:NAV ACTIVE FREQUENCY:2","SIMCONNECT:NAV STANDBY FREQUENCY:2"}, 
-                                                {"SIMCONNECT:COM ACTIVE FREQUENCY:1","SIMCONNECT:COM STANDBY FREQUENCY:1"}, 
-                                                {"SIMCONNECT:COM ACTIVE FREQUENCY:2","SIMCONNECT:COM STANDBY FREQUENCY:2"},
-                                                {"SIMCONNECT:ADF ACTIVE FREQUENCY:1","SIMCONNECT:ADF STANDBY FREQUENCY:1"}
-                                                };
+struct Subscription
+{
+    uint8_t cmd;
+    const char *data;
+};
+
+#define SUBSCRIPTIONS 18
+const Subscription subscriptions[SUBSCRIPTIONS] PROGMEM = {{rAPm, "SIMCONNECT:AUTOPILOT MASTER"},
+                                               {rFDm, "SIMCONNECT:AUTOPILOT FLIGHT DIRECTOR ACTIVE"},
+                                               {rHDGm, "SIMCONNECT:AUTOPILOT HEADING LOCK"},
+                                               {rNAVm, "SIMCONNECT:AUTOPILOT NAV1 LOCK"},
+                                               {rALTm, "SIMCONNECT:AUTOPILOT ALTITUDE LOCK"},
+                                               {rIASm, "SIMCONNECT:AUTOPILOT AIRSPEED HOLD"},
+                                               {rVSm, "SIMCONNECT:AUTOPILOT VERTICAL HOLD"},
+                                               {rAPRm, "SIMCONNECT:AUTOPILOT APPROACH HOLD"},
+                                               {rREVm, "SIMCONNECT:AUTOPILOT BACKCOURSE HOLD"},
+                                               {rALTv, "SIMCONNECT:AUTOPILOT ALTITUDE LOCK VAR"},
+                                               {rVSv, "SIMCONNECT:AUTOPILOT VERTICAL HOLD VAR"},
+                                               {rIASv, "SIMCONNECT:AUTOPILOT AIRSPEED HOLD VAR"},
+                                               {rHDGv, "SIMCONNECT:AUTOPILOT HEADING LOCK DIR"},
+                                               {rCRSv, "SIMCONNECT:NAV OBS:1"},
+                                               {rTXPDRc, "SIMCONNECT:TRANSPONDER CODE:1"},
+                                               {rBARv, "SIMCONNECT:KOHLSMAN SETTING HG"},
+                                               {rRFREQAv, "SIMCONNECT:NAV ACTIVE FREQUENCY:1"},
+                                               {rRFREQSv, "SIMCONNECT:NAV STANDBY FREQUENCY:1"}};
+
+const char *const nav_subscribe[5][2] PROGMEM = {{"SIMCONNECT:NAV ACTIVE FREQUENCY:1", "SIMCONNECT:NAV STANDBY FREQUENCY:1"},
+                                                 {"SIMCONNECT:NAV ACTIVE FREQUENCY:2", "SIMCONNECT:NAV STANDBY FREQUENCY:2"},
+                                                 {"SIMCONNECT:COM ACTIVE FREQUENCY:1", "SIMCONNECT:COM STANDBY FREQUENCY:1"},
+                                                 {"SIMCONNECT:COM ACTIVE FREQUENCY:2", "SIMCONNECT:COM STANDBY FREQUENCY:2"},
+                                                 {"SIMCONNECT:ADF ACTIVE FREQUENCY:1", "SIMCONNECT:ADF STANDBY FREQUENCY:1"}};
 
 const char *const crs_subscribe[2] PROGMEM = {"SIMCONNECT:NAV OBS:1", "SIMCONNECT:NAV OBS:2"};
 
 void attachCommandCallbacks();
 void updateRadioSource(uint8_t selection);
 void updateCourseSource(uint8_t selection);
-extern CmdMessenger messenger; 
+extern CmdMessenger messenger;
 extern bool isReady; // We will use this later to allow us to know when configuration is done.
 extern bool isPowerOn;
 extern bool isConfig;
 extern bool isDisplay;
-
+extern unsigned long subscribeTime;
+extern void subscribeNextData();
 #endif
