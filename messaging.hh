@@ -49,27 +49,28 @@ struct Subscription
 {
     uint8_t cmd;
     const char *data;
+    bool enable;
 };
 
 #define SUBSCRIPTIONS 18
-const Subscription subscriptions[SUBSCRIPTIONS] PROGMEM = {{rAPm, "SIMCONNECT:AUTOPILOT MASTER"},
-                                               {rFDm, "SIMCONNECT:AUTOPILOT FLIGHT DIRECTOR ACTIVE"},
-                                               {rHDGm, "SIMCONNECT:AUTOPILOT HEADING LOCK"},
-                                               {rNAVm, "SIMCONNECT:AUTOPILOT NAV1 LOCK"},
-                                               {rALTm, "SIMCONNECT:AUTOPILOT ALTITUDE LOCK"},
-                                               {rIASm, "SIMCONNECT:AUTOPILOT AIRSPEED HOLD"},
-                                               {rVSm, "SIMCONNECT:AUTOPILOT VERTICAL HOLD"},
-                                               {rAPRm, "SIMCONNECT:AUTOPILOT APPROACH HOLD"},
-                                               {rREVm, "SIMCONNECT:AUTOPILOT BACKCOURSE HOLD"},
-                                               {rALTv, "SIMCONNECT:AUTOPILOT ALTITUDE LOCK VAR"},
-                                               {rVSv, "SIMCONNECT:AUTOPILOT VERTICAL HOLD VAR"},
-                                               {rIASv, "SIMCONNECT:AUTOPILOT AIRSPEED HOLD VAR"},
-                                               {rHDGv, "SIMCONNECT:AUTOPILOT HEADING LOCK DIR"},
-                                               {rCRSv, "SIMCONNECT:NAV OBS:1"},
-                                               {rTXPDRc, "SIMCONNECT:TRANSPONDER CODE:1"},
-                                               {rBARv, "SIMCONNECT:KOHLSMAN SETTING HG"},
-                                               {rRFREQAv, "SIMCONNECT:NAV ACTIVE FREQUENCY:1"},
-                                               {rRFREQSv, "SIMCONNECT:NAV STANDBY FREQUENCY:1"}};
+const Subscription subscriptions[SUBSCRIPTIONS] PROGMEM = {{rAPm, "SIMCONNECT:AUTOPILOT MASTER", true},
+                                               {rFDm, "SIMCONNECT:AUTOPILOT FLIGHT DIRECTOR ACTIVE", false},
+                                               {rHDGm, "SIMCONNECT:AUTOPILOT HEADING LOCK", true},
+                                               {rNAVm, "SIMCONNECT:AUTOPILOT NAV1 LOCK", true},
+                                               {rALTm, "SIMCONNECT:AUTOPILOT ALTITUDE LOCK", true},
+                                               {rIASm, "SIMCONNECT:AUTOPILOT AIRSPEED HOLD", false},
+                                               {rVSm, "SIMCONNECT:AUTOPILOT VERTICAL HOLD", true},
+                                               {rAPRm, "SIMCONNECT:AUTOPILOT APPROACH HOLD", true},
+                                               {rREVm, "SIMCONNECT:AUTOPILOT BACKCOURSE HOLD", false},
+                                               {rALTv, "SIMCONNECT:AUTOPILOT ALTITUDE LOCK VAR", true},
+                                               {rVSv, "SIMCONNECT:AUTOPILOT VERTICAL HOLD VAR", true},
+                                               {rIASv, "SIMCONNECT:AUTOPILOT AIRSPEED HOLD VAR", false},
+                                               {rHDGv, "SIMCONNECT:AUTOPILOT HEADING LOCK DIR", true},
+                                               {rCRSv, "SIMCONNECT:NAV OBS:1", true},
+                                               {rTXPDRc, "SIMCONNECT:TRANSPONDER CODE:1", true},
+                                               {rBARv, "SIMCONNECT:KOHLSMAN SETTING HG", true},
+                                               {rRFREQAv, "SIMCONNECT:NAV ACTIVE FREQUENCY:1", true},
+                                               {rRFREQSv, "SIMCONNECT:NAV STANDBY FREQUENCY:1", true}};
 
 const char *const nav_subscribe[5][2] PROGMEM = {{"SIMCONNECT:NAV ACTIVE FREQUENCY:1", "SIMCONNECT:NAV STANDBY FREQUENCY:1"},
                                                  {"SIMCONNECT:NAV ACTIVE FREQUENCY:2", "SIMCONNECT:NAV STANDBY FREQUENCY:2"},

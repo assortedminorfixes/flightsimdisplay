@@ -160,22 +160,23 @@ void onEvent()
 void subscribeNextData()
 {
 
-    // Expose AP Mode ... Mode..
-    messenger.sendCmdStart(kCommand);     // This is a "1" or Command:1 from Spad list
-    messenger.sendCmdArg(F("SUBSCRIBE")); // Subcommand..ADD - SUBSCRIBE - UNSUBSCRIBE - EMULATE
-    messenger.sendCmdArg(subscriptions[subscribeIndex].cmd);
-    messenger.sendCmdArg(subscriptions[subscribeIndex].data);
-    messenger.sendCmdEnd();
+    if (subscriptions[subscribeIndex].enable)
+    {
+        // Expose AP Mode ... Mode..
+        messenger.sendCmdStart(kCommand);     // This is a "1" or Command:1 from Spad list
+        messenger.sendCmdArg(F("SUBSCRIBE")); // Subcommand..ADD - SUBSCRIBE - UNSUBSCRIBE - EMULATE
+        messenger.sendCmdArg(subscriptions[subscribeIndex].cmd);
+        messenger.sendCmdArg(subscriptions[subscribeIndex].data);
+        messenger.sendCmdEnd();
 
 #ifdef DEBUG
-    disp.printDebug(String(subscriptions[subscribeIndex].data).substring(0, 24));
+        disp.printDebug(String(subscriptions[subscribeIndex].data).substring(0, 24));
 #endif
-
+    }
     subscribeIndex++;
 
     if (subscribeIndex == SUBSCRIPTIONS)
         isReady = true;
-
 }
 
 // Callback to perform some action
