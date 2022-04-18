@@ -86,8 +86,8 @@ void onIdentifyRequest()
         messenger.sendCmdArg("OPTION");
         messenger.sendCmdArg("ISGENERIC=" + String(1));
         messenger.sendCmdArg("PAGESUPPORT=" + String(0));
-        messenger.sendCmdArg("CMD_COOLDOWN=" + String(100));
-        messenger.sendCmdArg("DATA_COOLDOWN=" + String(25));
+        messenger.sendCmdArg("CMD_COOLDOWN=" + String(200));
+        messenger.sendCmdArg("DATA_COOLDOWN=" + String(75));
         messenger.sendCmdArg("NO_DISPLAY_CLEAR=" + String(1));
         messenger.sendCmdArg("PID=LARSLL");
         messenger.sendCmdArg("VID=SIMDISPLAY");
