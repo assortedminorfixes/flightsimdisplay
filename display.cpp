@@ -14,20 +14,21 @@
 
 #ifdef __arm__
 // should use uinstd.h to define sbrk but Due causes a conflict
-extern "C" char* sbrk(int incr);
+extern "C" char *sbrk(int incr);
 #else  // __ARM__
 extern char *__brkval;
-#endif  // __arm__
+#endif // __arm__
 
-int freeMemory() {
-  char top;
+int freeMemory()
+{
+    char top;
 #ifdef __arm__
-  return &top - reinterpret_cast<char*>(sbrk(0));
+    return &top - reinterpret_cast<char *>(sbrk(0));
 #elif defined(CORE_TEENSY) || (ARDUINO > 103 && ARDUINO != 151)
-  return &top - __brkval;
+    return &top - __brkval;
 #else  // __arm__
-  return __brkval ? &top - __brkval : &top - __malloc_heap_start;
-#endif  // __arm__
+    return __brkval ? &top - __brkval : &top - __malloc_heap_start;
+#endif // __arm__
 }
 
 #define HX8357_CUST_GRAY 0x9CD3
@@ -131,11 +132,12 @@ TouchEvent Display::processTouch()
                         nav_sel = i;
                     }
                 }
-            } else if (p.y > 260 && p.y < 325 && p.x > 160) {
+            }
+            else if (p.y > 260 && p.y < 325 && p.x > 160)
+            {
                 lcd.drawCircle(p.x, p.y, 1, HX8357_CYAN);
                 crs_sel = 1;
             }
-
         }
         if (nav_sel > -1 && (nav_sel != radio.sel))
         {
@@ -145,16 +147,20 @@ TouchEvent Display::processTouch()
             te.event = TouchEventType::NAV_BUTTON;
             te.value = nav_sel;
             return te;
-        } else if (crs_sel > -1) {
+        }
+        else if (crs_sel > -1)
+        {
             nav_data.crs_sel = (nav_data.crs_sel + 1) % 2;
             update.crs = true;
             TouchEvent te;
             te.event = TouchEventType::CRS_BUTTON;
             te.value = nav_data.crs_sel;
             return te;
-        } else {
+        }
+        else
+        {
             TouchEvent te;
-            return te;            
+            return te;
         }
     }
     else
@@ -282,11 +288,13 @@ void Display::drawVerticalSpeed()
     GFXcanvas1 canvas(CANVAS_NUM_W, CANVAS_NUM_H);
     canvas.setFont(&B612Mono_Regular18pt7b);
     canvas.setCursor(CANVAS_NUM_UL_X, CANVAS_NUM_UL_Y);
-    if (nav_data.vs != 0) {
+    if (nav_data.vs != 0)
+    {
         canvas.printf("%5i", nav_data.vs);
         lcd.drawBitmap(DATA_VS_POS_X, DATA_VS_POS_Y, canvas.getBuffer(), CANVAS_NUM_W, CANVAS_NUM_H, HX8357_CYAN, HX8357_BLACK);
     }
-    else {
+    else
+    {
         canvas.printf("-----");
         lcd.drawBitmap(DATA_VS_POS_X, DATA_VS_POS_Y, canvas.getBuffer(), CANVAS_NUM_W, CANVAS_NUM_H, HX8357_CYAN, HX8357_BLACK);
     }
@@ -310,7 +318,7 @@ void Display::drawHeading()
     canvas.setCursor(5, 45);
     canvas.printf("%03i", nav_data.hdg);
     canvas.setFont(&B612Mono_Regular24pt8b);
-    canvas.printf(deg);    
+    canvas.printf(deg);
     lcd.drawBitmap(DATA_HDG_POS_X, DATA_HDG_POS_Y, canvas.getBuffer(), CANVAS_NUM_LARGE_W, CANVAS_NUM_LARGE_H, HX8357_WHITE, HX8357_BLACK);
     update.hdg = false;
 }
@@ -321,11 +329,11 @@ void Display::setCourse(int16_t crs)
         nav_data.crs = 360;
     else
         nav_data.crs = crs;
-    
+
     update.crs = true;
 }
 
-void Display::updateCourseLabel(uint8_t selection) 
+void Display::updateCourseLabel(uint8_t selection)
 {
     lcd.setFont(&B612_Regular10pt7b);
     lcd.setTextColor(HX8357_BLACK);
@@ -335,7 +343,6 @@ void Display::updateCourseLabel(uint8_t selection)
     lcd.setTextColor(HX8357_GREEN);
     lcd.setCursor(165, 260);
     lcd.printf("Course %i ", (selection + 1));
-
 }
 
 void Display::drawCourse()
@@ -349,7 +356,6 @@ void Display::drawCourse()
     canvas.printf(deg);
     lcd.drawBitmap(DATA_CRS_POS_X, DATA_CRS_POS_Y, canvas.getBuffer(), CANVAS_NUM_LARGE_W, CANVAS_NUM_LARGE_H, HX8357_WHITE, HX8357_BLACK);
     update.crs = false;
-
 }
 
 void Display::setTransponderCode(int16_t xpdr)
@@ -363,10 +369,12 @@ void Display::drawTransponderCode()
     GFXcanvas1 canvas(CANVAS_NUM_W, CANVAS_NUM_H);
     canvas.setFont(&B612Mono_Regular18pt7b);
     canvas.setCursor(CANVAS_NUM_UL_X, CANVAS_NUM_UL_Y);
-    if (radio.xpdr != 0) {
+    if (radio.xpdr != 0)
+    {
         canvas.printf("%04i", radio.xpdr);
     }
-    else {
+    else
+    {
         canvas.printf("----");
     }
     lcd.drawBitmap(DATA_XPDR_POS_X, DATA_XPDR_POS_Y, canvas.getBuffer(), CANVAS_NUM_W, CANVAS_NUM_H, HX8357_WHITE, HX8357_BLACK);
@@ -409,12 +417,16 @@ void Display::setRadioFrequencyStandby(float_t freq)
 void Display::drawRadioActive()
 {
     uint8_t frac_digits = 3;
+    uint8_t pad_digits = 3;
+
     if (radio.sel <= 1)
         frac_digits = 2;
-    else if (radio.sel == 4)
+    else if (radio.sel == 4) {
+        pad_digits = 4;
         frac_digits = 1;
+    }
 
-    GFXcanvas1 canv = this->trimDecimal(radio.freq.active, 3, frac_digits, CANVAS_NUM_UL_X, CANVAS_NUM_UL_Y, &B612Mono_Regular18pt7b);
+    GFXcanvas1 canv = this->trimDecimal(radio.freq.active, pad_digits, frac_digits, CANVAS_NUM_UL_X, CANVAS_NUM_UL_Y, &B612Mono_Regular18pt7b);
     lcd.drawBitmap(DATA_RADIO_ACT_POS_X, DATA_RADIO_ACT_POS_Y, canv.getBuffer(), CANVAS_NUM_W, CANVAS_NUM_H, HX8357_WHITE, HX8357_BLACK);
     update.radio_active = false;
 }
@@ -422,32 +434,39 @@ void Display::drawRadioActive()
 void Display::drawRadioStandby()
 {
     uint8_t frac_digits = 3;
+    uint8_t pad_digits = 3;
+
     if (radio.sel <= 1)
         frac_digits = 2;
-    else if (radio.sel == 4)
+    else if (radio.sel == 4) {
         frac_digits = 1;
+        pad_digits = 4;
+    }
 
-    GFXcanvas1 canv = this->trimDecimal(radio.freq.standby, 3, frac_digits, CANVAS_NUM_UL_X, CANVAS_NUM_UL_Y, &B612Mono_Regular18pt7b);
+    GFXcanvas1 canv = this->trimDecimal(radio.freq.standby, pad_digits, frac_digits, CANVAS_NUM_UL_X, CANVAS_NUM_UL_Y, &B612Mono_Regular18pt7b);
     lcd.drawBitmap(DATA_RADIO_STANDBY_POS_X, DATA_RADIO_STANDBY_POS_Y, canv.getBuffer(), CANVAS_NUM_W, CANVAS_NUM_H, HX8357_CYAN, HX8357_BLACK);
     update.radio_standby = false;
 }
 
-void Display::lastCommand(uint8_t command, int32_t val) {
-    lcd.setTextColor(HX8357_CYAN,HX8357_BLACK);
+void Display::lastCommand(uint8_t command, int32_t val)
+{
+    lcd.setTextColor(HX8357_CYAN, HX8357_BLACK);
     lcd.setFont(NULL);
     lcd.setCursor(5, 465);
     lcd.printf("Cmd: %2d %d        ", command, val);
 }
 
-void Display::printMem() {
-    lcd.setTextColor(HX8357_CYAN,HX8357_BLACK);
+void Display::printMem()
+{
+    lcd.setTextColor(HX8357_CYAN, HX8357_BLACK);
     lcd.setFont(NULL);
     lcd.setCursor(5, 455);
     lcd.printf("Mem: %d             ", freeMemory());
 }
 
-void Display::printDebug(String msg) {
-    lcd.setTextColor(HX8357_CYAN,HX8357_BLACK);
+void Display::printDebug(String msg)
+{
+    lcd.setTextColor(HX8357_CYAN, HX8357_BLACK);
     lcd.setFont(NULL);
     lcd.setCursor(165, 465);
     lcd.printf(msg.c_str());
@@ -460,7 +479,8 @@ GFXcanvas1 Display::trimDecimal(float_t num, uint8_t padding, uint8_t decimals, 
     String numStr;
     if (num != 0.0)
         numStr = String(num, decimals);
-    else {
+    else
+    {
         numStr = "";
         for (int i = 0; i < padding; i++)
             numStr.concat('-');
@@ -470,9 +490,10 @@ GFXcanvas1 Display::trimDecimal(float_t num, uint8_t padding, uint8_t decimals, 
     }
 
     String numStr_int = getStringValue(numStr, '.', 0);
-    String numStr_int_pad = "";    
-    uint8_t pads = (padding) - numStr_int.length();
-    for (int i = 0; i < pads; i++) {
+    String numStr_int_pad = "";
+    uint8_t pads = (padding)-numStr_int.length();
+    for (int i = 0; i < pads; i++)
+    {
         numStr_int_pad.concat('0');
     }
     numStr_int_pad.concat(numStr_int);
@@ -486,29 +507,30 @@ GFXcanvas1 Display::trimDecimal(float_t num, uint8_t padding, uint8_t decimals, 
 
     int16_t x1, y1;
     uint16_t w, h;
-    canvas.getTextBounds(numStr_int_pad.c_str(), x, y, &x1, &y1, &w, &h); //calc width of new string
-    canvas.printf("%s",numStr_int_pad.c_str());
+    canvas.getTextBounds(numStr_int_pad.c_str(), x, y, &x1, &y1, &w, &h); // calc width of new string
+    canvas.printf("%s", numStr_int_pad.c_str());
     canvas.setCursor(x + w + DECIMAL_PAD, y);
     canvas.printf("%s", numStr_frac.c_str());
 
     return canvas;
-
 }
 
 // https://stackoverflow.com/questions/9072320/split-string-into-string-array
 String Display::getStringValue(String data, char separator, int index)
 {
-  int found = 0;
-  int strIndex[] = {0, -1};
-  int maxIndex = data.length()-1;
+    int found = 0;
+    int strIndex[] = {0, -1};
+    int maxIndex = data.length() - 1;
 
-  for(int i=0; i<=maxIndex && found<=index; i++){
-    if(data.charAt(i)==separator || i==maxIndex){
-        found++;
-        strIndex[0] = strIndex[1]+1;
-        strIndex[1] = (i == maxIndex) ? i+1 : i;
+    for (int i = 0; i <= maxIndex && found <= index; i++)
+    {
+        if (data.charAt(i) == separator || i == maxIndex)
+        {
+            found++;
+            strIndex[0] = strIndex[1] + 1;
+            strIndex[1] = (i == maxIndex) ? i + 1 : i;
+        }
     }
-  }
 
-  return found>index ? data.substring(strIndex[0], strIndex[1]) : "";
+    return found > index ? data.substring(strIndex[0], strIndex[1]) : "";
 }

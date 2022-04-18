@@ -7,6 +7,9 @@
 CmdMessenger messenger(Serial);
 
 bool isReady = false;
+bool isConfig = false;
+bool isPowerOn = false;
+bool isDisplay = false;
 
 #define DEBUG
 
@@ -25,11 +28,11 @@ void sendDebugMsg(int command, T arg)
 void onUnknownCommand()
 {
     uint8_t cmd = messenger.commandID();
-    
-    #ifdef DEBUG
+
+#ifdef DEBUG
     String msg = F("Unknown command: ");
     disp.printDebug(msg + cmd);
-    #endif
+#endif
 
     messenger.sendCmd(kDebug, F("UNKNOWN COMMAND")); // if a command comes in that is not reckognized from sketch write to the spad log
 }
@@ -43,18 +46,22 @@ void onIdentifyRequest()
     if (strcmp(szRequest, "INIT") == 0)
     { // Initial Configuration declaration
 
-      uint8_t apiVersion = messenger.readInt32Arg();
-      String spadVersion = messenger.readStringArg();
-      String spadAuthToken = messenger.readStringArg();
+        isReady = false;
+        isPowerOn = false;
+        isConfig = false;
 
-      messenger.sendCmdStart(kRequest);
-      messenger.sendCmdArg(F("SPAD"));
-      messenger.sendCmdArg(F("{7eb4b953-64c6-4c94-a958-1fac034a0370}")); // GUID
-      messenger.sendCmdArg(F("SimDisplay")); // DEVICE NAME
-      messenger.sendCmdArg(2);
-      messenger.sendCmdArg("0.2"); // VERSION NUMBER              
-      messenger.sendCmdArg("A=123456789012345678"); // AUTHOR ID
-      messenger.sendCmdEnd();
+        uint8_t apiVersion = messenger.readInt32Arg();
+        String spadVersion = messenger.readStringArg();
+        String spadAuthToken = messenger.readStringArg();
+
+        messenger.sendCmdStart(kRequest);
+        messenger.sendCmdArg(F("SPAD"));
+        messenger.sendCmdArg(F("{7eb4b953-64c6-4c94-a958-1fac034a0370}")); // GUID
+        messenger.sendCmdArg(F("SimDisplay"));                             // DEVICE NAME
+        messenger.sendCmdArg(2);
+        messenger.sendCmdArg("0.2");                  // VERSION NUMBER
+        messenger.sendCmdArg("A=123456789012345678"); // AUTHOR ID
+        messenger.sendCmdEnd();
 
         return;
     }
@@ -70,14 +77,18 @@ void onIdentifyRequest()
     if (strcmp(szRequest, "CONFIG") == 0)
     {
         disp.startConfig();
-    
-        messenger.sendCmdStart(kCommand); 
+        isReady = false;
+        isConfig = false;
+        isPowerOn = false;
+        isDisplay = false;
+
+        messenger.sendCmdStart(kCommand);
         messenger.sendCmdArg("OPTION");
-        messenger.sendCmdArg("ISGENERIC="+String(1));
-        messenger.sendCmdArg("PAGESUPPORT="+String(0));
-        messenger.sendCmdArg("CMD_COOLDOWN="+String(200));
-        messenger.sendCmdArg("DATA_COOLDOWN="+String(50));
-        messenger.sendCmdArg("NO_DISPLAY_CLEAR="+String(1));
+        messenger.sendCmdArg("ISGENERIC=" + String(1));
+        messenger.sendCmdArg("PAGESUPPORT=" + String(0));
+        messenger.sendCmdArg("CMD_COOLDOWN=" + String(100));
+        messenger.sendCmdArg("DATA_COOLDOWN=" + String(25));
+        messenger.sendCmdArg("NO_DISPLAY_CLEAR=" + String(1));
         messenger.sendCmdArg("PID=LARSLL");
         messenger.sendCmdArg("VID=SIMDISPLAY");
         messenger.sendCmdEnd();
@@ -105,6 +116,7 @@ void onIdentifyRequest()
         // tell SPAD.neXT we are done with config
         messenger.sendCmd(kRequest, F("CONFIG"));
 
+        isConfig = true;
 
         return;
     }
@@ -114,29 +126,40 @@ void onEvent()
 {
     char *szRequest = messenger.readStringArg();
 
-    if (strcmp(szRequest, "VIRTUALPOWER") == 0 && isReady)
+    if (strcmp(szRequest, "VIRTUALPOWER") == 0)
     {
         uint8_t flag = messenger.readInt16Arg();
 
-        if (flag == 1)
+        if (flag == 1 && isConfig)
         {
-            // disp.printStatic();
-            // disp.setActiveRadio(0);
+            isPowerOn = true;
         }
     }
+    else if (strcmp(szRequest, "PROFILECHANGED") == 0) {
+        char* str = messenger.readStringArg();
+        return;
+    }
+    else if (strcmp(szRequest, "PAGE") == 0) {
+        char* uid = messenger.readStringArg();
+        uint8_t pagenum = messenger.readInt16Arg();
+        char* pagename = messenger.readStringArg();
+        return;
+    }
+
     else if (strcmp(szRequest, "START") == 0)
     {
-        disp.printStatic();
+        delay(MESSAGING_DELAY);
+
         disp.setActiveRadio(0);
 
-                // Expose AP Mode ... Mode..
+        // Expose AP Mode ... Mode..
         messenger.sendCmdStart(kCommand);     // This is a "1" or Command:1 from Spad list
         messenger.sendCmdArg(F("SUBSCRIBE")); // Subcommand..ADD - SUBSCRIBE - UNSUBSCRIBE - EMULATE
         messenger.sendCmdArg(rAPm);
         messenger.sendCmdArg(F("SIMCONNECT:AUTOPILOT MASTER"));
         messenger.sendCmdEnd();
 
-        delay(1);
+        delay(MESSAGING_DELAY);
 
         // Expose FD Mode ... Mode..
         messenger.sendCmdStart(kCommand);     // This is a "1" or Command:1 from Spad list
@@ -145,7 +168,7 @@ void onEvent()
         messenger.sendCmdArg(F("SIMCONNECT:AUTOPILOT FLIGHT DIRECTOR ACTIVE"));
         messenger.sendCmdEnd();
 
-        delay(1);
+        delay(MESSAGING_DELAY);
 
         // Expose HDG Mode ... Mode..
         messenger.sendCmdStart(kCommand);     // This is a "1" or Command:1 from Spad list
@@ -154,8 +177,8 @@ void onEvent()
         messenger.sendCmdArg(F("SIMCONNECT:AUTOPILOT HEADING LOCK"));
         messenger.sendCmdEnd();
 
-        delay(1);
-        
+        delay(MESSAGING_DELAY);
+
         // Expose NAV Mode ... Mode..
         messenger.sendCmdStart(kCommand);     // This is a "1" or Command:1 from Spad list
         messenger.sendCmdArg(F("SUBSCRIBE")); // Subcommand..ADD - SUBSCRIBE - UNSUBSCRIBE - EMULATE
@@ -163,7 +186,7 @@ void onEvent()
         messenger.sendCmdArg(F("SIMCONNECT:AUTOPILOT NAV1 LOCK"));
         messenger.sendCmdEnd();
 
-        delay(1);
+        delay(MESSAGING_DELAY);
 
         // Expose ALT Mode ... Mode..
         messenger.sendCmdStart(kCommand);     // This is a "1" or Command:1 from Spad list
@@ -172,7 +195,7 @@ void onEvent()
         messenger.sendCmdArg(F("SIMCONNECT:AUTOPILOT ALTITUDE LOCK"));
         messenger.sendCmdEnd();
 
-        delay(1);
+        delay(MESSAGING_DELAY);
 
         // Expose IAS Mode ... Mode..
         messenger.sendCmdStart(kCommand);     // This is a "1" or Command:1 from Spad list
@@ -181,7 +204,7 @@ void onEvent()
         messenger.sendCmdArg(F("SIMCONNECT:AUTOPILOT AIRSPEED HOLD"));
         messenger.sendCmdEnd();
 
-        delay(1);
+        delay(MESSAGING_DELAY);
 
         // Expose VS Mode ... Mode..
         messenger.sendCmdStart(kCommand);     // This is a "1" or Command:1 from Spad list
@@ -190,7 +213,7 @@ void onEvent()
         messenger.sendCmdArg(F("SIMCONNECT:AUTOPILOT VERTICAL HOLD"));
         messenger.sendCmdEnd();
 
-        delay(1);
+        delay(MESSAGING_DELAY);
 
         // Expose APR Mode ... Mode..
         messenger.sendCmdStart(kCommand);     // This is a "1" or Command:1 from Spad list
@@ -199,7 +222,7 @@ void onEvent()
         messenger.sendCmdArg(F("SIMCONNECT:AUTOPILOT APPROACH HOLD"));
         messenger.sendCmdEnd();
 
-        delay(1);
+        delay(MESSAGING_DELAY);
 
         // Expose REV Mode ... Mode..
         messenger.sendCmdStart(kCommand);     // This is a "1" or Command:1 from Spad list
@@ -208,7 +231,7 @@ void onEvent()
         messenger.sendCmdArg(F("SIMCONNECT:AUTOPILOT BACKCOURSE HOLD"));
         messenger.sendCmdEnd();
 
-        delay(1);
+        delay(MESSAGING_DELAY);
 
         // Subscribe ALT Value
         messenger.sendCmdStart(kCommand);     // This is a "1" or Command:1 from Spad list
@@ -217,7 +240,7 @@ void onEvent()
         messenger.sendCmdArg(F("SIMCONNECT:AUTOPILOT ALTITUDE LOCK VAR"));
         messenger.sendCmdEnd();
 
-        delay(1);
+        delay(MESSAGING_DELAY);
 
         // Subscribe VS Value
         messenger.sendCmdStart(kCommand);     // This is a "1" or Command:1 from Spad list
@@ -226,7 +249,7 @@ void onEvent()
         messenger.sendCmdArg(F("SIMCONNECT:AUTOPILOT VERTICAL HOLD VAR"));
         messenger.sendCmdEnd();
 
-        delay(1);
+        delay(MESSAGING_DELAY);
 
         // Subscribe IAS Value
         messenger.sendCmdStart(kCommand);     // This is a "1" or Command:1 from Spad list
@@ -235,7 +258,7 @@ void onEvent()
         messenger.sendCmdArg(F("SIMCONNECT:AUTOPILOT AIRSPEED HOLD VAR"));
         messenger.sendCmdEnd();
 
-        delay(1);
+        delay(MESSAGING_DELAY);
 
         // Subscribe HDG Value
         messenger.sendCmdStart(kCommand);     // This is a "1" or Command:1 from Spad list
@@ -244,7 +267,7 @@ void onEvent()
         messenger.sendCmdArg(F("SIMCONNECT:AUTOPILOT HEADING LOCK DIR"));
         messenger.sendCmdEnd();
 
-        delay(1);
+        delay(MESSAGING_DELAY);
 
         // Subscribe CRS Value
         messenger.sendCmdStart(kCommand);       // This is a "1" or Command:1 from Spad list
@@ -253,7 +276,7 @@ void onEvent()
         messenger.sendCmdArg(crs_subscribe[0]); // will become "SERIAL:<guid>/AP/CRSval"
         messenger.sendCmdEnd();
 
-        delay(1);
+        delay(MESSAGING_DELAY);
 
         // Subscribe TXPDR Value
         messenger.sendCmdStart(kCommand);     // This is a "1" or Command:1 from Spad list
@@ -262,7 +285,7 @@ void onEvent()
         messenger.sendCmdArg(F("SIMCONNECT:TRANSPONDER CODE:1"));
         messenger.sendCmdEnd();
 
-        delay(1);
+        delay(MESSAGING_DELAY);
 
         // Subscribe to BAR Value
         messenger.sendCmdStart(kCommand);     // This is a "1" or Command:1 from Spad list
@@ -271,21 +294,21 @@ void onEvent()
         messenger.sendCmdArg(F("SIMCONNECT:KOHLSMAN SETTING HG"));
         messenger.sendCmdEnd();
 
-        delay(1);
+        delay(MESSAGING_DELAY);
 
         // Subscribe Radio Active Frequency
         messenger.sendCmdStart(kCommand);     // This is a "1" or Command:1 from Spad list
         messenger.sendCmdArg(F("SUBSCRIBE")); // Subcommand..ADD - SUBSCRIBE - UNSUBSCRIBE - EMULATE
-        messenger.sendCmdArg(rRFREQAv);   
+        messenger.sendCmdArg(rRFREQAv);
         messenger.sendCmdArg(nav_subscribe[0][0]);
         messenger.sendCmdEnd();
 
-        delay(1);
+        delay(MESSAGING_DELAY);
 
         // Subscribe Radio Active Frequency
-        messenger.sendCmdStart(kCommand);          // This is a "1" or Command:1 from Spad list
-        messenger.sendCmdArg(F("SUBSCRIBE"));      // Subcommand..ADD - SUBSCRIBE - UNSUBSCRIBE - EMULATE
-        messenger.sendCmdArg(rRFREQSv);   
+        messenger.sendCmdStart(kCommand);     // This is a "1" or Command:1 from Spad list
+        messenger.sendCmdArg(F("SUBSCRIBE")); // Subcommand..ADD - SUBSCRIBE - UNSUBSCRIBE - EMULATE
+        messenger.sendCmdArg(rRFREQSv);
         messenger.sendCmdArg(nav_subscribe[0][1]);
         messenger.sendCmdEnd();
 
@@ -300,7 +323,7 @@ void onEvent()
 
 void onAPmodeOn()
 {
-    bool newAPmode = (bool) messenger.readInt16Arg();
+    bool newAPmode = (bool)messenger.readInt16Arg();
     lights.setAutopilot(newAPmode);
 }
 
@@ -312,13 +335,13 @@ void onFDmodeOn()
 
 void onHDGmodeOn()
 {
-    bool newHDGmode = (bool) messenger.readInt16Arg();
+    bool newHDGmode = (bool)messenger.readInt16Arg();
     lights.setHeading(newHDGmode);
 }
 
 void onNAVmodeOn()
 {
-    bool newNAVmode = (bool) messenger.readInt16Arg();
+    bool newNAVmode = (bool)messenger.readInt16Arg();
     lights.setNavigation(newNAVmode);
 }
 
@@ -330,7 +353,7 @@ void onIASmodeOn()
 
 void onVSmodeOn()
 {
-    bool newVSmode = (bool) messenger.readInt16Arg();
+    bool newVSmode = (bool)messenger.readInt16Arg();
     lights.setVerticalSpeed(newVSmode);
     if (!newVSmode)
         disp.setVerticalSpeed(0);
@@ -338,13 +361,13 @@ void onVSmodeOn()
 
 void onALTmodeOn()
 {
-    bool newALTmode = (bool) messenger.readInt16Arg();
+    bool newALTmode = (bool)messenger.readInt16Arg();
     lights.setAltitude(newALTmode);
 }
 
 void onAPRmodeOn()
 {
-    bool newAPRmode = (bool) messenger.readInt16Arg();
+    bool newAPRmode = (bool)messenger.readInt16Arg();
     lights.setApproach(newAPRmode);
 }
 
@@ -352,7 +375,6 @@ void onREVmodeOn()
 {
     int32_t newREVmode = messenger.readInt32Arg();
     messenger.sendCmd(kDebug, F("REV Mode not enabled")); // Writing the Spad Log that we turned the FD Annunciator ON...
-
 }
 void onALTvalOn()
 {
@@ -443,7 +465,6 @@ void attachCommandCallbacks()
     messenger.attach(rBARv, onRBARvOn);
     messenger.attach(sRADIOs, onRADIOsel);
     messenger.attach(sCRSs, onCRSsel);
-
 }
 
 void updateRadioSource(uint8_t selection)
@@ -473,10 +494,10 @@ void updateRadioSource(uint8_t selection)
     messenger.sendCmdArg(nav_subscribe[selection][1]);
     messenger.sendCmdEnd();
 
-    #ifdef DEBUG
+#ifdef DEBUG
     String msg = F("Radio change: ");
     disp.printDebug(msg + selection);
-    #endif
+#endif
 }
 
 void updateCourseSource(uint8_t selection)

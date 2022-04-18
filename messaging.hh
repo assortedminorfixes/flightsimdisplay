@@ -3,6 +3,8 @@
 
 #include <CmdMessenger.h> // CmdMessenger ... v4.2 was used when making this sketch
 
+#define MESSAGING_DELAY 50
+
 enum : byte
 {
     kRequest = 0,    // Request from SPAD.neXt              ... Documentation lists as "Command:0"
@@ -56,5 +58,8 @@ void updateRadioSource(uint8_t selection);
 void updateCourseSource(uint8_t selection);
 extern CmdMessenger messenger; 
 extern bool isReady; // We will use this later to allow us to know when configuration is done.
+extern bool isPowerOn;
+extern bool isConfig;
+extern bool isDisplay;
 
 #endif
