@@ -11,6 +11,7 @@
  Display is based on the B612 font (https://github.com/polarsys/b612), converted for
  use with Adafruit GFX using fontconvert.
 */
+#include "state.hh"
 #include "display.hh"
 #include "messaging.hh"
 #include "lights.hh"
@@ -21,12 +22,7 @@
 Display disp{};
 LightController lights{};
 
-struct State
-{
-  uint8_t radio = 0;
-  uint8_t crs = 0;
-  long last_touch = 0;
-} state;
+struct State state;
 
 void setup()
 {
