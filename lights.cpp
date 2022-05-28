@@ -1,7 +1,7 @@
 #include "lights.hh"
 #include "Arduino.h"
 
-LightController::LightController() : strip(6, PIXEL_PIN, NEO_GRBW + NEO_KHZ800)
+LightController::LightController() : strip(PIXEL_NUM, PIXEL_PIN, NEO_GRBW + NEO_KHZ800)
 {
 
     strip.begin();
@@ -40,6 +40,11 @@ void LightController::setHeading(bool on)
         this->setHeading(LightStyle::BRIGHT);
     else
         this->setHeading(LightStyle::DIM);
+}
+
+void LightController::setNavigation(LightState state)
+{
+    this->updatePinToStyle(PIXEL_NAV, state);
 }
 
 void LightController::setNavigation(LightStyle style)
@@ -94,26 +99,44 @@ void LightController::setApproach(bool on)
         this->setApproach(LightStyle::DIM);
 }
 
+void LightController::updatePinToStyle(uint8_t pixel, LightState state)
+{
+    pixelState[pixel] = state;
+}
+
 void LightController::updatePinToStyle(uint8_t pixel, LightStyle style)
 {
-    switch (style)
-    {
-    case LightStyle::OFF:
-        strip.setPixelColor(pixel, strip.Color(0, 0, 0, 0));
-        break;
-    case LightStyle::DIM:
-        strip.setPixelColor(pixel, strip.Color(0, LIGHT_DIM, 0, 0));
-        break;
-    case LightStyle::BRIGHT:
-        strip.setPixelColor(pixel, strip.Color(0, LIGHT_BRIGHT, 0, 0));
-        break;
+    pixelState[pixel].style = style;
+    pixelState[pixel].color = LightColor::GREEN;
+}
+
+uint32_t LightController::convertStateToColor(LightState state) 
+{
+    
+    uint32_t color = 0;
+    
+    switch (state.color) {
+        case LightColor::GREEN:
+            color = strip.Color(0, state.style, 0, 0);
+            break;
+        case LightColor::YELLOW:
+            color = strip.Color(state.style, state.style, 0, 0);
+            break;
+        case LightColor::WHITE:
+            color = strip.Color(0, 0, 0, state.style);        
+            break;
     }
-    strip.show();
+
+    return color;
+
 }
 
 void LightController::update()
 {
-    return;
+    for (int p = 0; p < PIXEL_NUM; p++) {
+            strip.setPixelColor(p, convertStateToColor(pixelState[p]));
+    }
+    strip.show();
 }
 
 // Fill the dots one after the other with a color

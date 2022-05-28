@@ -45,41 +45,53 @@ void loop()
   // Process incoming serial data, and perform callbacks
   messenger.feedinSerialData();
 
-  if (isPowerOn && isConfig && !isReady && (subscribeTime > 0))
+  if (isPowerOn && isConfig && !isReady)
   {
-    if (millis() > subscribeTime)
+    if (state.mode == 1 && subscribeTime > 0)
     {
-      subscribeNextData();
+      if (millis() > subscribeTime)
+      {
+        subscribeNextData();
+      }
+      else
+      {
+        disp.printDebug("Waiting: " + String(subscribeTime - millis()) + "   ");
+      }
+    } else {
+      isReady = true;
     }
-    else
-      disp.printDebug("Waiting: " + String(subscribeTime - millis()));
   }
-
   if (isPowerOn && isReady)
   {
 
-    TouchEvent te = disp.processTouch();
-    if ((millis() - state.last_touch) > 500 && (te.event != TouchEventType::NO_TOUCH))
+    if ((millis() - state.last_touch) > TS_DOUBLETOUCH_DELAY)
     {
+      TouchEvent te = disp.processTouch();
+      if (te.event != TouchEventType::NO_TOUCH)
+      {
 
-      if (te.event == TouchEventType::NAV_BUTTON && te.value != state.radio)
-      {
-        updateRadioSource(te.value);
-        state.radio = te.value;
-        state.last_touch = millis();
+        if (te.event == TouchEventType::NAV_BUTTON && te.value != state.radio)
+        {
+          updateRadioSource(te.value);
+          state.radio = te.value;
+          state.last_touch = millis();
+        }
+        else if (te.event == TouchEventType::CRS_BUTTON && te.value != state.crs)
+        {
+          updateCourseSource(te.value);
+          disp.updateCourseLabel(te.value);
+          state.crs = te.value;
+          state.last_touch = millis();
+        }
       }
-      else if (te.event == TouchEventType::CRS_BUTTON && te.value != state.crs)
-      {
-        updateCourseSource(te.value);
-        disp.updateCourseLabel(te.value);
-        state.crs = te.value;
-        state.last_touch = millis();
-      }
+    } else {
+      disp.clearTouch();
     }
 
     if (!isDisplay)
     {
       disp.printStatic();
+      disp.updateCourseLabel(state.crs);
       isDisplay = true;
     }
 

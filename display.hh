@@ -86,7 +86,8 @@ class Display {
       void printSplash(String str);
       void redraw();
       TouchEvent processTouch();
-
+      void clearTouch();
+      
       void setAltitude(int32_t alt);
       void setVerticalSpeed(int16_t vs);
       void setHeading(int16_t hdg);
@@ -97,7 +98,7 @@ class Display {
       void setRadioFrequencyStandby(float_t freq);
       void setActiveRadio(uint8_t radio);
       void setBarometer(float_t baro);
-      void lastCommand(uint8_t command, int32_t value);
+      void lastCommand(uint8_t command, uint8_t index, int32_t value);
       void printDebug(String msg);
       void printMem();
 };

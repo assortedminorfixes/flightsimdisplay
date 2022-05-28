@@ -5,7 +5,8 @@ struct State
 {
   uint8_t radio = 0;
   uint8_t crs = 0;
-  long last_touch = 0;
+  unsigned long last_touch = 0;
+  uint8_t mode = 0;
 };
 
 extern struct State state;
