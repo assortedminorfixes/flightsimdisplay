@@ -1,6 +1,7 @@
 #include "Arduino.h"
 
 #include "display.hh"
+#include "messaging.hh"
 #include "featherwing_touch.hh"
 
 #include "fonts/b612reg10pt.h"
@@ -150,7 +151,7 @@ TouchEvent Display::processTouch()
         }
         else if (crs_sel > -1)
         {
-            nav_data.crs_sel = (nav_data.crs_sel + 1) % 2;
+            nav_data.crs_sel = (nav_data.crs_sel + 1) % MSG_COURSES;
             update.crs = true;
             TouchEvent te;
             te.event = TouchEventType::CRS_BUTTON;
@@ -167,6 +168,12 @@ TouchEvent Display::processTouch()
     {
         TouchEvent te;
         return te;
+    }
+}
+
+void Display::clearTouch() {
+    while (!ts.bufferEmpty()) {
+        ts.getPoint();
     }
 }
 
@@ -203,7 +210,7 @@ void Display::printStatic()
     lcd.setCursor(5, 260);
     lcd.print(F("Heading"));
     lcd.setCursor(165, 260);
-    lcd.print(F("Course 1 "));
+    lcd.print(F("Course"));
 
     lcd.drawFastHLine(0, 325, 320, HX8357_WHITE);
 
@@ -338,11 +345,11 @@ void Display::updateCourseLabel(uint8_t selection)
     lcd.setFont(&B612_Regular10pt7b);
     lcd.setTextColor(HX8357_BLACK);
     lcd.setCursor(165, 260);
-    lcd.printf("Course %i ", ((selection + 1) % 2 + 1));
+    lcd.printf("Course %s ", crs_subscribe[(selection + (MSG_COURSES - 1)) % MSG_COURSES][1]);
 
     lcd.setTextColor(HX8357_GREEN);
     lcd.setCursor(165, 260);
-    lcd.printf("Course %i ", (selection + 1));
+    lcd.printf("Course %s ", crs_subscribe[selection][1]);
 }
 
 void Display::drawCourse()
@@ -448,12 +455,12 @@ void Display::drawRadioStandby()
     update.radio_standby = false;
 }
 
-void Display::lastCommand(uint8_t command, int32_t val)
+void Display::lastCommand(uint8_t command, uint8_t idx, int32_t val)
 {
     lcd.setTextColor(HX8357_CYAN, HX8357_BLACK);
     lcd.setFont(NULL);
     lcd.setCursor(5, 465);
-    lcd.printf("Cmd: %2d %d        ", command, val);
+    lcd.printf("Cmd: %2d %2d %d        ", command, idx, val);
 }
 
 void Display::printMem()

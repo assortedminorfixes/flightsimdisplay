@@ -46,4 +46,6 @@
 #define TS_MAXX 3800
 #define TS_MAXY 4000
 
+#define TS_DOUBLETOUCH_DELAY 150
+
 #endif
