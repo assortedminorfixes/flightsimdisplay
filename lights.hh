@@ -13,8 +13,8 @@
 #define PIXEL_APR 5
 #define PIXEL_NUM 6
 
-#define LIGHT_BRIGHT 96
-#define LIGHT_DIM 6
+#define LIGHT_BRIGHT 64
+#define LIGHT_DIM 4
 #define LIGHT_BACKLIGHT 16
 #define LIGHT_OFF 0
 
@@ -24,15 +24,19 @@ enum LightStyle : uint8_t {
    BRIGHT = LIGHT_BRIGHT
 };
 
-enum LightColor {
+enum LightColor : uint8_t {
     GREEN,
     YELLOW,
     WHITE
 };
 
 struct LightState {
-    LightStyle style = LightStyle::DIM;
-    LightColor color = LightColor::GREEN;
+    LightStyle style;
+    LightColor color;
+
+    LightState() : style(LightStyle::DIM), color(LightColor::WHITE) {}
+    LightState(LightStyle style, LightColor color) : style(style), color(color) {}
+    
 };
 
 class LightController {
@@ -50,17 +54,22 @@ class LightController {
         void initLights();
         void update();
         void setAutopilot(LightStyle style);
+        void setAutopilot(LightState state);
         void setAutopilot(bool on);
         void setHeading(LightStyle style);
+        void setHeading(LightState state);
         void setHeading(bool on);
         void setNavigation(LightState state);
         void setNavigation(LightStyle style);
         void setNavigation(bool on);                
         void setAltitude(LightStyle style);
+        void setAltitude(LightState state);
         void setAltitude(bool on);
         void setVerticalSpeed(LightStyle style);
+        void setVerticalSpeed(LightState state);
         void setVerticalSpeed(bool on);
         void setApproach(LightStyle style);
+        void setApproach(LightState state);
         void setApproach(bool on);        
 };
 

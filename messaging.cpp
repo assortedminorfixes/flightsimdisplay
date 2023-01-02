@@ -265,13 +265,25 @@ void onLED()
 {
 
     uint8_t dataIdx = messenger.readInt16Arg();
-    bool enable = (bool)messenger.readInt16Arg();
+    bool enable = messenger.readBoolArg();
     String tag = messenger.readStringArg();
     String color = messenger.readStringArg();
 
+    LightState ls = LightState();
+
+    if (enable) {
+        ls.style = LightStyle::BRIGHT;
+
+        if (color.equals("YELLOW")) {
+            ls.color = LightColor::YELLOW;
+        } else if (color.equals("GREEN")) {
+            ls.color = LightColor::GREEN;
+        }
+    }
+
     if (dataIdx == dModeAP)
     {
-        lights.setAutopilot(enable);
+        lights.setAutopilot(ls);
     }
     else if (dataIdx == dModeFD)
     {
@@ -279,26 +291,15 @@ void onLED()
     }
     else if (dataIdx == dModeHDG)
     {
-        lights.setHeading(enable);
+        lights.setHeading(ls);
     }
     else if (dataIdx == dModeNAV)
     {
-        if (color.equals("YELLOW")) {
-            LightState ls = LightState();
-            ls.color = LightColor::YELLOW;
-            if (enable)
-                ls.style = LightStyle::BRIGHT;
-            else
-                ls.style = LightStyle::DIM;
-            lights.setNavigation(ls);
-        }
-        else {
-            lights.setNavigation(enable);
-        }
+        lights.setNavigation(ls);
     }
     else if (dataIdx == dModeALT)
     {
-        lights.setAltitude(enable);
+        lights.setAltitude(ls);
     }
     else if (dataIdx == dModeIAS)
     {
@@ -306,13 +307,13 @@ void onLED()
     }
     else if (dataIdx == dModeVS)
     {
-        lights.setVerticalSpeed(enable);
+        lights.setVerticalSpeed(ls);
         if (!enable)
             disp.setVerticalSpeed(0);
     }
     else if (dataIdx == dModeAPR)
     {
-        lights.setApproach(enable);
+        lights.setApproach(ls);
     }
     else if (dataIdx == dModeIAS)
     {

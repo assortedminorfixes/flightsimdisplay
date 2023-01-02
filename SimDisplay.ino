@@ -61,17 +61,15 @@ void loop()
       if (te.event != TouchEventType::NO_TOUCH)
       {
 
-        if (te.event == TouchEventType::NAV_BUTTON && te.value != state.radio.sel)
+        if (te.event == TouchEventType::NAV_BUTTON)
         {
           updateRadioSource(te.value);
-          state.radio.sel = te.value;
           state.last_touch = millis();
         }
-        else if (te.event == TouchEventType::CRS_BUTTON && te.value != state.nav.crs_sel)
+        else if (te.event == TouchEventType::CRS_BUTTON)
         {
           updateCourseSource(te.value);
           disp.updateCourseLabel(te.value);
-          state.nav.crs_sel = te.value;
           state.last_touch = millis();
         }
       }

@@ -21,6 +21,11 @@ void LightController::setAutopilot(LightStyle style)
     this->updatePinToStyle(PIXEL_AP, style);
 }
 
+void LightController::setAutopilot(LightState state)
+{
+    this->updatePinToStyle(PIXEL_AP, state);
+}
+
 void LightController::setAutopilot(bool on)
 {
     if (on)
@@ -32,6 +37,11 @@ void LightController::setAutopilot(bool on)
 void LightController::setHeading(LightStyle style)
 {
     this->updatePinToStyle(PIXEL_HDG, style);
+}
+
+void LightController::setHeading(LightState state)
+{
+    this->updatePinToStyle(PIXEL_HDG, state);
 }
 
 void LightController::setHeading(bool on)
@@ -65,6 +75,11 @@ void LightController::setAltitude(LightStyle style)
     this->updatePinToStyle(PIXEL_ALT, style);
 }
 
+void LightController::setAltitude(LightState state)
+{
+    this->updatePinToStyle(PIXEL_ALT, state);
+}
+
 void LightController::setAltitude(bool on)
 {
     if (on)
@@ -78,6 +93,11 @@ void LightController::setVerticalSpeed(LightStyle style)
     this->updatePinToStyle(PIXEL_VS, style);
 }
 
+void LightController::setVerticalSpeed(LightState state)
+{
+    this->updatePinToStyle(PIXEL_VS, state);
+}
+
 void LightController::setVerticalSpeed(bool on)
 {
     if (on)
@@ -89,6 +109,11 @@ void LightController::setVerticalSpeed(bool on)
 void LightController::setApproach(LightStyle style)
 {
     this->updatePinToStyle(PIXEL_APR, style);
+}
+
+void LightController::setApproach(LightState state)
+{
+    this->updatePinToStyle(PIXEL_APR, state);
 }
 
 void LightController::setApproach(bool on)
@@ -107,7 +132,7 @@ void LightController::updatePinToStyle(uint8_t pixel, LightState state)
 void LightController::updatePinToStyle(uint8_t pixel, LightStyle style)
 {
     pixelState[pixel].style = style;
-    pixelState[pixel].color = LightColor::GREEN;
+    pixelState[pixel].color = LightColor::WHITE;
 }
 
 uint32_t LightController::convertStateToColor(LightState state) 
