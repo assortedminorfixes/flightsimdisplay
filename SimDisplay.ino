@@ -45,23 +45,7 @@ void loop()
   // Process incoming serial data, and perform callbacks
   messenger.feedinSerialData();
 
-  if (isPowerOn && isConfig && !isReady)
-  {
-    if (state.mode == 1 && subscribeTime > 0)
-    {
-      if (millis() > subscribeTime)
-      {
-        subscribeNextData();
-      }
-      else
-      {
-        disp.printDebug("Waiting: " + String(subscribeTime - millis()) + "   ");
-      }
-    } else {
-      isReady = true;
-    }
-  }
-  if (isPowerOn && isReady)
+  if (isPowerOn && isConfig)
   {
 
     if ((millis() - state.last_touch) > TS_DOUBLETOUCH_DELAY)
