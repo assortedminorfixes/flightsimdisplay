@@ -202,59 +202,7 @@ void onData()
         messenger.readInt16Arg();
     }
 
-    if (dataIdx == dModeAP)
-    {
-        modeSwitch = (bool)messenger.readInt16Arg();
-        lights.setAutopilot(modeSwitch);
-    }
-    else if (dataIdx == dModeFD)
-    {
-        modeSwitch = (bool)messenger.readInt16Arg();
-        messenger.sendCmd(kDebug, F("FD Mode not enabled")); // Writing the Spad Log that we turned the FD Annunciator ON...
-    }
-    else if (dataIdx == dModeHDG)
-    {
-        modeSwitch = (bool)messenger.readInt16Arg();
-        lights.setHeading(modeSwitch);
-    }
-    else if (dataIdx == dModeNAV)
-    {
-        modeSwitch = (bool)messenger.readInt16Arg();
-        lights.setNavigation(modeSwitch);
-    }
-    else if (dataIdx == dModeALT)
-    {
-        modeSwitch = (bool)messenger.readInt16Arg();
-        lights.setAltitude(modeSwitch);
-    }
-    else if (dataIdx == dModeIAS)
-    {
-        modeSwitch = (bool)messenger.readInt16Arg();
-        messenger.sendCmd(kDebug, F("IAS Mode not enabled")); // Writing the Spad Log that we turned the FD Annunciator ON...
-    }
-    else if (dataIdx == dModeVS)
-    {
-        modeSwitch = (bool)messenger.readInt16Arg();
-        lights.setVerticalSpeed(modeSwitch);
-        if (!modeSwitch)
-            disp.setVerticalSpeed(0);
-    }
-    else if (dataIdx == dModeAPR)
-    {
-        modeSwitch = (bool)messenger.readInt16Arg();
-        lights.setApproach(modeSwitch);
-    }
-    else if (dataIdx == dModeIAS)
-    {
-        modeSwitch = (bool)messenger.readInt16Arg();
-        messenger.sendCmd(kDebug, F("IAS Mode not enabled")); // Writing the Spad Log that we turned the FD Annunciator ON...
-    }
-    else if (dataIdx == dModeREV)
-    {
-        modeSwitch = (bool)messenger.readInt16Arg();
-        messenger.sendCmd(kDebug, F("REV Mode not enabled")); // Writing the Spad Log that we turned the FD Annunciator ON...
-    }
-    else if (dataIdx == dValALT)
+    if (dataIdx == dValALT)
     {
         intVal = messenger.readInt32Arg();
         disp.setAltitude(intVal);
