@@ -11,7 +11,7 @@ LightController::LightController() : strip(PIXEL_NUM, PIXEL_PIN, NEO_GRBW + NEO_
 
 void LightController::initLights()
 {
-    this->colorWipe(strip.Color(0, 0, 0, LIGHT_BACKLIGHT), 50);
+    this->colorWipe(strip.Color(0, 0, 0, LIGHT_DIM), 100);
     strip.clear();
     strip.show();
 }

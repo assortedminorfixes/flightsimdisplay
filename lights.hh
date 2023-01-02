@@ -13,8 +13,8 @@
 #define PIXEL_APR 5
 #define PIXEL_NUM 6
 
-#define LIGHT_BRIGHT 128
-#define LIGHT_DIM 4
+#define LIGHT_BRIGHT 96
+#define LIGHT_DIM 6
 #define LIGHT_BACKLIGHT 16
 #define LIGHT_OFF 0
 
@@ -31,7 +31,7 @@ enum LightColor {
 };
 
 struct LightState {
-    LightStyle style = LightStyle::OFF;
+    LightStyle style = LightStyle::DIM;
     LightColor color = LightColor::GREEN;
 };
 
