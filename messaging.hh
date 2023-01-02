@@ -17,7 +17,6 @@ enum : byte
     kLED = 6,        // Update LEDs
     kDisplay = 7,    // Update Display
     kInput = 8,      // Update Input Value from Device
-    kMode = 10       // Custom Command for Mode
 };
 
 enum : byte
@@ -64,33 +63,6 @@ struct InputOutput
     const char *args;
 };
 
-#define MSG_SUBSCRIPTIONS 18
-const Subscription subscriptions[MSG_SUBSCRIPTIONS] PROGMEM = {{dModeAP, "SIMCONNECT:AUTOPILOT MASTER", true},
-                                                               {dModeFD, "SIMCONNECT:AUTOPILOT FLIGHT DIRECTOR ACTIVE", false},
-                                                               {dModeHDG, "SIMCONNECT:AUTOPILOT HEADING LOCK", true},
-                                                               {dModeNAV, "SIMCONNECT:AUTOPILOT NAV1 LOCK", true},
-                                                               {dModeALT, "SIMCONNECT:AUTOPILOT ALTITUDE LOCK", true},
-                                                               {dModeIAS, "SIMCONNECT:AUTOPILOT AIRSPEED HOLD", false},
-                                                               {dModeVS, "SIMCONNECT:AUTOPILOT VERTICAL HOLD", true},
-                                                               {dModeAPR, "SIMCONNECT:AUTOPILOT APPROACH HOLD", true},
-                                                               {dModeREV, "SIMCONNECT:AUTOPILOT BACKCOURSE HOLD", false},
-                                                               {dValALT, "SIMCONNECT:AUTOPILOT ALTITUDE LOCK VAR", true},
-                                                               {dValVS, "SIMCONNECT:AUTOPILOT VERTICAL HOLD VAR", true},
-                                                               {dValIAS, "SIMCONNECT:AUTOPILOT AIRSPEED HOLD VAR", false},
-                                                               {dValHDG, "SIMCONNECT:AUTOPILOT HEADING LOCK DIR", true},
-                                                               {dValCRS, "SIMCONNECT:NAV OBS:1", true},
-                                                               {dValTXPDR, "SIMCONNECT:TRANSPONDER CODE:1", true},
-                                                               {dValBARO, "SIMCONNECT:KOHLSMAN SETTING HG", true},
-                                                               {dValRFREQ_A, "SIMCONNECT:NAV ACTIVE FREQUENCY:1", true},
-                                                               {dValRFREQ_S, "SIMCONNECT:NAV STANDBY FREQUENCY:1", true}};
-
-#define MSG_RADIOS 5
-const char *const nav_subscribe[MSG_RADIOS][2] PROGMEM = {{"SIMCONNECT:NAV ACTIVE FREQUENCY:1", "SIMCONNECT:NAV STANDBY FREQUENCY:1"},
-                                                          {"SIMCONNECT:NAV ACTIVE FREQUENCY:2", "SIMCONNECT:NAV STANDBY FREQUENCY:2"},
-                                                          {"SIMCONNECT:COM ACTIVE FREQUENCY:1", "SIMCONNECT:COM STANDBY FREQUENCY:1"},
-                                                          {"SIMCONNECT:COM ACTIVE FREQUENCY:2", "SIMCONNECT:COM STANDBY FREQUENCY:2"},
-                                                          {"SIMCONNECT:ADF ACTIVE FREQUENCY:1", "SIMCONNECT:ADF STANDBY FREQUENCY:1"}};
-
 #define MSG_INPUTS 2
 const InputOutput inputs[MSG_INPUTS] PROGMEM = {
     {iSelRadio, "S_RADIO", "ROTARY", "SPAD_ENCODER_NOACC", "POS_NAMES=NAV1#NAV2#COM1#COM2#ADF,POS_VALUES=0#1#2#3#4"},
@@ -122,10 +94,7 @@ void attachCommandCallbacks();
 void updateRadioSource(uint8_t selection);
 void updateCourseSource(uint8_t selection);
 extern CmdMessenger messenger;
-extern bool isReady; // We will use this later to allow us to know when configuration is done.
 extern bool isPowerOn;
 extern bool isConfig;
 extern bool isDisplay;
-extern unsigned long subscribeTime;
-extern void subscribeNextData();
 #endif

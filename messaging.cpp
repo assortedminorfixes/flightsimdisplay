@@ -7,12 +7,9 @@
 //// ------   Spad Coms Section ------ ///////
 CmdMessenger messenger(Serial);
 
-bool isReady = false;
 bool isConfig = false;
 bool isPowerOn = false;
 bool isDisplay = false;
-unsigned long subscribeTime = 0;
-uint8_t subscribeIndex = 0;
 
 #define DEBUG
 
@@ -49,7 +46,6 @@ void onIdentifyRequest()
     if (strcmp(szRequest, "INIT") == 0)
     { // Initial Configuration declaration
 
-        isReady = false;
         isPowerOn = false;
         isConfig = false;
 
@@ -82,11 +78,9 @@ void onIdentifyRequest()
     if (strcmp(szRequest, "CONFIG") == 0)
     {
         disp.printSplash(F("Configuring"));
-        isReady = false;
         isConfig = false;
         isPowerOn = false;
         isDisplay = false;
-        subscribeIndex = 0;
 
         messenger.sendCmdStart(kRequest);
         messenger.sendCmdArg("OPTION");
@@ -105,14 +99,6 @@ void onIdentifyRequest()
         messenger.sendCmdArg(F("SPAD_VIRTUAL_POWER"));
         messenger.sendCmdArg(F("UI_TYPE=3"));
         messenger.sendCmdArg(F("CUSTOM_TYPE=POWER"));
-        messenger.sendCmdEnd();
-
-        messenger.sendCmdStart(kCommand);
-        messenger.sendCmdArg(F("ADD"));
-        messenger.sendCmdArg(kMode);
-        messenger.sendCmdArg(F("MODE"));
-        messenger.sendCmdArg(F("U8,RW,Device Mode"));
-        messenger.sendCmdArg(F("Select 1 for Subscription and 0 for Output driven display"));
         messenger.sendCmdEnd();
 
         // Expose Inputs
@@ -196,7 +182,6 @@ void onEvent()
     {
         disp.printSplash(F("Starting..."));
         isDisplay = false;
-        subscribeTime = millis() + MESSAGING_START_DELAY;
         disp.setActiveRadio(state.radio);
 
         if (isConfig)
@@ -331,14 +316,6 @@ void onData()
     }
 }
 
-void onMode()
-{
-    state.mode = messenger.readInt16Arg();
-#ifdef DEBUG
-    disp.printDebug("Mode change: " + String(state.mode));
-#endif
-}
-
 void onLED()
 {
 
@@ -405,28 +382,6 @@ void onLED()
 
 }
 
-void subscribeNextData()
-{
-
-    if (subscriptions[subscribeIndex].enable)
-    {
-        // Expose AP Mode ... Mode..
-        messenger.sendCmdStart(kCommand);     // This is a "1" or Command:1 from Spad list
-        messenger.sendCmdArg(F("SUBSCRIBE")); // Subcommand..ADD - SUBSCRIBE - UNSUBSCRIBE - EMULATE
-        messenger.sendCmdArg(subscriptions[subscribeIndex].cmd);
-        messenger.sendCmdArg(subscriptions[subscribeIndex].data);
-        messenger.sendCmdEnd();
-
-#ifdef DEBUG
-        disp.printDebug(String(subscriptions[subscribeIndex].data).substring(0, 24));
-#endif
-    }
-    subscribeIndex++;
-
-    if (subscribeIndex == MSG_SUBSCRIPTIONS)
-        isReady = true;
-}
-
 // Define callbacks for the different SPAD command sets
 void attachCommandCallbacks()
 {
@@ -436,44 +391,17 @@ void attachCommandCallbacks()
     messenger.attach(kEvent, onEvent);
     messenger.attach(kData, onData);
     messenger.attach(kDisplay, onData);
-    messenger.attach(kMode, onMode);
     messenger.attach(kLED, onLED);
 }
 
 void updateRadioSource(uint8_t selection)
 {
-
     // Provides currently selected Radio
     messenger.sendCmdStart(kInput);
     messenger.sendCmdArg(iSelRadio);
     messenger.sendCmdArg(selection);
     messenger.sendCmdEnd();
 
-    if (state.mode == 1)
-    {
-        // Changes the subscriptions
-        messenger.sendCmdStart(kCommand);
-        messenger.sendCmdArg(F("UNSUBSCRIBE"));
-        messenger.sendCmdArg(dValRFREQ_A);
-        messenger.sendCmdEnd();
-
-        messenger.sendCmdStart(kCommand);
-        messenger.sendCmdArg(F("SUBSCRIBE"));
-        messenger.sendCmdArg(dValRFREQ_A);
-        messenger.sendCmdArg(nav_subscribe[selection][0]);
-        messenger.sendCmdEnd();
-
-        messenger.sendCmdStart(kCommand);       // This is a "1" or Command:1 from Spad list
-        messenger.sendCmdArg(F("UNSUBSCRIBE")); // Subcommand..ADD - SUBSCRIBE - UNSUBSCRIBE - EMULATE
-        messenger.sendCmdArg(dValRFREQ_S);      // CMDID value defined at the top as "26" this will be the DATA channel
-        messenger.sendCmdEnd();
-
-        messenger.sendCmdStart(kCommand);     // This is a "1" or Command:1 from Spad list
-        messenger.sendCmdArg(F("SUBSCRIBE")); // Subcommand..ADD - SUBSCRIBE - UNSUBSCRIBE - EMULATE
-        messenger.sendCmdArg(dValRFREQ_S);    // CMDID value defined at the top as "26" this will be the DATA channel
-        messenger.sendCmdArg(nav_subscribe[selection][1]);
-        messenger.sendCmdEnd();
-    }
 #ifdef DEBUG
     String msg = F("Radio change: ");
     disp.printDebug(msg + selection + "  ");
@@ -482,25 +410,12 @@ void updateRadioSource(uint8_t selection)
 
 void updateCourseSource(uint8_t selection)
 {
-    // Provides currently selected Radio
+    // Provides currently selected Course
     messenger.sendCmdStart(kInput);
     messenger.sendCmdArg(iSelCRS);
     messenger.sendCmdArg(selection);
     messenger.sendCmdEnd();
 
-    if (state.mode == 1)
-    {
-        messenger.sendCmdStart(kCommand);
-        messenger.sendCmdArg(F("UNSUBSCRIBE"));
-        messenger.sendCmdArg(dValCRS);
-        messenger.sendCmdEnd();
-
-        messenger.sendCmdStart(kCommand);     // This is a "1" or Command:1 from Spad list
-        messenger.sendCmdArg(F("SUBSCRIBE")); // Subcommand..ADD - SUBSCRIBE - UNSUBSCRIBE - EMULATE
-        messenger.sendCmdArg(dValCRS);        // CMDID value defined at the top as "26" this will be the DATA channel
-        messenger.sendCmdArg(crs_subscribe[selection][0]);
-        messenger.sendCmdEnd();
-    }
 #ifdef DEBUG
     String msg = F("Course change: ");
     disp.printDebug(msg + selection);
