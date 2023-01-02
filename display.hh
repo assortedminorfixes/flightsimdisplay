@@ -24,28 +24,6 @@ class Display {
    private:
       GFXcanvas1 cCenter;
       const char deg[1]  = {0xB0};
-      struct NAVData
-      {
-         int32_t alt = 0;
-         int16_t vs = 0;
-         int16_t hdg = 0;
-         uint8_t crs_sel = 0;
-         int16_t crs = 0;
-         float_t baro = 0.0;
-      };
-
-      struct Freq
-      {
-         float_t active = 0.0;
-         float_t standby = 0.0;
-      };
-
-      struct RadioData
-      {
-         Freq freq;
-         uint8_t sel = 0;
-         uint16_t xpdr = 0;
-      };
 
       struct Update
       {
@@ -60,9 +38,7 @@ class Display {
          bool baro = false;
       };
 
-      struct NAVData nav_data;
       struct Update update;
-      struct RadioData radio;
 
       void drawAltitude();
       void drawVerticalSpeed();
@@ -84,7 +60,7 @@ class Display {
       void printButtons(uint8_t active = 0);
       void printStatic();
       void printSplash(String str);
-      void redraw();
+      void redraw(bool full = false);
       TouchEvent processTouch();
       void clearTouch();
       

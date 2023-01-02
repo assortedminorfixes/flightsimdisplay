@@ -45,7 +45,14 @@ void loop()
   // Process incoming serial data, and perform callbacks
   messenger.feedinSerialData();
 
-  if (isPowerOn && isConfig)
+  if (!state.display_static && state.power)
+  {
+    disp.printStatic();
+    disp.updateCourseLabel(state.nav.crs_sel);
+    disp.redraw(true);
+  }
+
+  if (state.configured && state.display_static)
   {
 
     if ((millis() - state.last_touch) > TS_DOUBLETOUCH_DELAY)
@@ -54,29 +61,24 @@ void loop()
       if (te.event != TouchEventType::NO_TOUCH)
       {
 
-        if (te.event == TouchEventType::NAV_BUTTON && te.value != state.radio)
+        if (te.event == TouchEventType::NAV_BUTTON && te.value != state.radio.sel)
         {
           updateRadioSource(te.value);
-          state.radio = te.value;
+          state.radio.sel = te.value;
           state.last_touch = millis();
         }
-        else if (te.event == TouchEventType::CRS_BUTTON && te.value != state.crs)
+        else if (te.event == TouchEventType::CRS_BUTTON && te.value != state.nav.crs_sel)
         {
           updateCourseSource(te.value);
           disp.updateCourseLabel(te.value);
-          state.crs = te.value;
+          state.nav.crs_sel = te.value;
           state.last_touch = millis();
         }
       }
-    } else {
-      disp.clearTouch();
     }
-
-    if (!isDisplay)
+    else
     {
-      disp.printStatic();
-      disp.updateCourseLabel(state.crs);
-      isDisplay = true;
+      disp.clearTouch();
     }
 
     disp.redraw();

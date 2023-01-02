@@ -94,7 +94,4 @@ void attachCommandCallbacks();
 void updateRadioSource(uint8_t selection);
 void updateCourseSource(uint8_t selection);
 extern CmdMessenger messenger;
-extern bool isPowerOn;
-extern bool isConfig;
-extern bool isDisplay;
 #endif

@@ -3,6 +3,7 @@
 #include "display.hh"
 #include "messaging.hh"
 #include "featherwing_touch.hh"
+#include "state.hh"
 
 #include "fonts/b612reg10pt.h"
 #include "fonts/b612bold7pt.h"
@@ -140,9 +141,9 @@ TouchEvent Display::processTouch()
                 crs_sel = 1;
             }
         }
-        if (nav_sel > -1 && (nav_sel != radio.sel))
+        if (nav_sel > -1 && (nav_sel != state.radio.sel))
         {
-            radio.sel = nav_sel;
+            state.radio.sel = nav_sel;
             update.radio_buttons = true;
             TouchEvent te;
             te.event = TouchEventType::NAV_BUTTON;
@@ -151,11 +152,11 @@ TouchEvent Display::processTouch()
         }
         else if (crs_sel > -1)
         {
-            nav_data.crs_sel = (nav_data.crs_sel + 1) % MSG_COURSES;
+            state.nav.crs_sel = (state.nav.crs_sel + 1) % MSG_COURSES;
             update.crs = true;
             TouchEvent te;
             te.event = TouchEventType::CRS_BUTTON;
-            te.value = nav_data.crs_sel;
+            te.value = state.nav.crs_sel;
             return te;
         }
         else
@@ -179,6 +180,7 @@ void Display::clearTouch() {
 
 void Display::printSplash(String str)
 {
+    state.display_static = false;
     lcd.fillScreen(HX8357_BLACK);
     cCenter.fillScreen(HX8357_BLACK);
     cCenter.setFont(&B612_Bold16pt7b);
@@ -220,6 +222,9 @@ void Display::printStatic()
     lcd.print(F("Barometer"));
 
     lcd.drawFastHLine(0, 410, 320, HX8357_WHITE);
+
+    state.display_static = true;
+
 }
 
 void Display::printButtons(uint8_t active)
@@ -243,31 +248,31 @@ void Display::printButtons(uint8_t active)
     update.radio_buttons = false;
 }
 
-void Display::redraw()
+void Display::redraw(bool full)
 {
-    if (update.alt)
-        drawAltitude();
-    else if (update.hdg)
-        drawHeading();
-    else if (update.crs)
-        drawCourse();
-    else if (update.vs)
-        drawVerticalSpeed();
-    else if (update.xpdr)
-        drawTransponderCode();
-    else if (update.radio_buttons)
-        printButtons(radio.sel);
-    else if (update.radio_active)
+    if (update.radio_active || full)
         drawRadioActive();
-    else if (update.radio_standby)
+    if (update.radio_standby || full)
         drawRadioStandby();
-    else if (update.baro)
+    if (update.radio_buttons || full)
+        printButtons(state.radio.sel);
+    if (update.alt || full)
+        drawAltitude();
+    if (update.vs || full)
+        drawVerticalSpeed();
+    if (update.hdg || full)
+        drawHeading();
+    if (update.crs || full)
+        drawCourse();
+    if (update.xpdr || full)
+        drawTransponderCode();
+    if (update.baro || full)
         drawBarometer();
 }
 
 void Display::setAltitude(int32_t alt)
 {
-    nav_data.alt = alt;
+    state.nav.alt = alt;
     update.alt = true;
 }
 
@@ -276,17 +281,17 @@ void Display::drawAltitude()
     GFXcanvas1 canvas(CANVAS_NUM_W, CANVAS_NUM_H);
     canvas.setFont(&B612Mono_Regular18pt7b);
     canvas.setCursor(CANVAS_NUM_UL_X, CANVAS_NUM_UL_Y);
-    if (nav_data.alt != 0)
-        canvas.printf("%5i", nav_data.alt);
+    if (state.nav.alt != 0)
+        canvas.printf("%5i", state.nav.alt);
     else
-        canvas.printf("-----", nav_data.alt);
+        canvas.printf("-----", state.nav.alt);
     lcd.drawBitmap(DATA_ALT_POS_X, DATA_ALT_POS_Y, canvas.getBuffer(), CANVAS_NUM_W, CANVAS_NUM_H, HX8357_WHITE, HX8357_BLACK);
     update.alt = false;
 }
 
 void Display::setVerticalSpeed(int16_t vs)
 {
-    nav_data.vs = vs;
+    state.nav.vs = vs;
     update.vs = true;
 }
 
@@ -295,9 +300,9 @@ void Display::drawVerticalSpeed()
     GFXcanvas1 canvas(CANVAS_NUM_W, CANVAS_NUM_H);
     canvas.setFont(&B612Mono_Regular18pt7b);
     canvas.setCursor(CANVAS_NUM_UL_X, CANVAS_NUM_UL_Y);
-    if (nav_data.vs != 0)
+    if (state.nav.vs != 0)
     {
-        canvas.printf("%5i", nav_data.vs);
+        canvas.printf("%5i", state.nav.vs);
         lcd.drawBitmap(DATA_VS_POS_X, DATA_VS_POS_Y, canvas.getBuffer(), CANVAS_NUM_W, CANVAS_NUM_H, HX8357_CYAN, HX8357_BLACK);
     }
     else
@@ -311,9 +316,9 @@ void Display::drawVerticalSpeed()
 void Display::setHeading(int16_t hdg)
 {
     if (hdg == 0)
-        nav_data.hdg = 360;
+        state.nav.hdg = 360;
     else
-        nav_data.hdg = hdg;
+        state.nav.hdg = hdg;
 
     update.hdg = true;
 }
@@ -323,7 +328,7 @@ void Display::drawHeading()
     GFXcanvas1 canvas(CANVAS_NUM_LARGE_W, CANVAS_NUM_LARGE_H);
     canvas.setFont(&B612Mono_Regular24pt7b);
     canvas.setCursor(5, 45);
-    canvas.printf("%03i", nav_data.hdg);
+    canvas.printf("%03i", state.nav.hdg);
     canvas.setFont(&B612Mono_Regular24pt8b);
     canvas.printf(deg);
     lcd.drawBitmap(DATA_HDG_POS_X, DATA_HDG_POS_Y, canvas.getBuffer(), CANVAS_NUM_LARGE_W, CANVAS_NUM_LARGE_H, HX8357_WHITE, HX8357_BLACK);
@@ -333,9 +338,9 @@ void Display::drawHeading()
 void Display::setCourse(int16_t crs)
 {
     if (crs == 0)
-        nav_data.crs = 360;
+        state.nav.crs = 360;
     else
-        nav_data.crs = crs;
+        state.nav.crs = crs;
 
     update.crs = true;
 }
@@ -358,7 +363,7 @@ void Display::drawCourse()
     GFXcanvas1 canvas(CANVAS_NUM_LARGE_W, CANVAS_NUM_LARGE_H);
     canvas.setFont(&B612Mono_Regular24pt7b);
     canvas.setCursor(5, 45);
-    canvas.printf("%03i", nav_data.crs);
+    canvas.printf("%03i", state.nav.crs);
     canvas.setFont(&B612Mono_Regular24pt8b);
     canvas.printf(deg);
     lcd.drawBitmap(DATA_CRS_POS_X, DATA_CRS_POS_Y, canvas.getBuffer(), CANVAS_NUM_LARGE_W, CANVAS_NUM_LARGE_H, HX8357_WHITE, HX8357_BLACK);
@@ -367,7 +372,7 @@ void Display::drawCourse()
 
 void Display::setTransponderCode(int16_t xpdr)
 {
-    radio.xpdr = xpdr;
+    state.radio.xpdr = xpdr;
     update.xpdr = true;
 }
 
@@ -376,9 +381,9 @@ void Display::drawTransponderCode()
     GFXcanvas1 canvas(CANVAS_NUM_W, CANVAS_NUM_H);
     canvas.setFont(&B612Mono_Regular18pt7b);
     canvas.setCursor(CANVAS_NUM_UL_X, CANVAS_NUM_UL_Y);
-    if (radio.xpdr != 0)
+    if (state.radio.xpdr != 0)
     {
-        canvas.printf("%04i", radio.xpdr);
+        canvas.printf("%04i", state.radio.xpdr);
     }
     else
     {
@@ -390,20 +395,20 @@ void Display::drawTransponderCode()
 
 void Display::setBarometer(float_t baro)
 {
-    nav_data.baro = baro;
+    state.nav.baro = baro;
     update.baro = true;
 }
 
 void Display::drawBarometer()
 {
-    GFXcanvas1 canv = this->trimDecimal(nav_data.baro, 2, 2, CANVAS_NUM_UL_X, CANVAS_NUM_UL_Y, &B612Mono_Regular18pt7b);
+    GFXcanvas1 canv = this->trimDecimal(state.nav.baro, 2, 2, CANVAS_NUM_UL_X, CANVAS_NUM_UL_Y, &B612Mono_Regular18pt7b);
     lcd.drawBitmap(DATA_BARO_POS_X, DATA_BARO_POS_Y, canv.getBuffer(), CANVAS_NUM_W, CANVAS_NUM_H, HX8357_WHITE, HX8357_BLACK);
     update.baro = false;
 }
 
 void Display::setActiveRadio(uint8_t sel)
 {
-    radio.sel = sel;
+    state.radio.sel = sel;
     update.radio_active = true;
     update.radio_standby = true;
     update.radio_buttons = true;
@@ -411,13 +416,13 @@ void Display::setActiveRadio(uint8_t sel)
 
 void Display::setRadioFrequencyActive(float_t freq)
 {
-    radio.freq.active = freq;
+    state.radio.freq.active = freq;
     update.radio_active = true;
 }
 
 void Display::setRadioFrequencyStandby(float_t freq)
 {
-    radio.freq.standby = freq;
+    state.radio.freq.standby = freq;
     update.radio_standby = true;
 }
 
@@ -426,14 +431,14 @@ void Display::drawRadioActive()
     uint8_t frac_digits = 3;
     uint8_t pad_digits = 3;
 
-    if (radio.sel <= 1)
+    if (state.radio.sel <= 1)
         frac_digits = 2;
-    else if (radio.sel == 4) {
+    else if (state.radio.sel == 4) {
         pad_digits = 4;
         frac_digits = 1;
     }
 
-    GFXcanvas1 canv = this->trimDecimal(radio.freq.active, pad_digits, frac_digits, CANVAS_NUM_UL_X, CANVAS_NUM_UL_Y, &B612Mono_Regular18pt7b);
+    GFXcanvas1 canv = this->trimDecimal(state.radio.freq.active, pad_digits, frac_digits, CANVAS_NUM_UL_X, CANVAS_NUM_UL_Y, &B612Mono_Regular18pt7b);
     lcd.drawBitmap(DATA_RADIO_ACT_POS_X, DATA_RADIO_ACT_POS_Y, canv.getBuffer(), CANVAS_NUM_W, CANVAS_NUM_H, HX8357_WHITE, HX8357_BLACK);
     update.radio_active = false;
 }
@@ -443,14 +448,14 @@ void Display::drawRadioStandby()
     uint8_t frac_digits = 3;
     uint8_t pad_digits = 3;
 
-    if (radio.sel <= 1)
+    if (state.radio.sel <= 1)
         frac_digits = 2;
-    else if (radio.sel == 4) {
+    else if (state.radio.sel == 4) {
         frac_digits = 1;
         pad_digits = 4;
     }
 
-    GFXcanvas1 canv = this->trimDecimal(radio.freq.standby, pad_digits, frac_digits, CANVAS_NUM_UL_X, CANVAS_NUM_UL_Y, &B612Mono_Regular18pt7b);
+    GFXcanvas1 canv = this->trimDecimal(state.radio.freq.standby, pad_digits, frac_digits, CANVAS_NUM_UL_X, CANVAS_NUM_UL_Y, &B612Mono_Regular18pt7b);
     lcd.drawBitmap(DATA_RADIO_STANDBY_POS_X, DATA_RADIO_STANDBY_POS_Y, canv.getBuffer(), CANVAS_NUM_W, CANVAS_NUM_H, HX8357_CYAN, HX8357_BLACK);
     update.radio_standby = false;
 }

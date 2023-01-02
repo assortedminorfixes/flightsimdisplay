@@ -7,10 +7,6 @@
 //// ------   Spad Coms Section ------ ///////
 CmdMessenger messenger(Serial);
 
-bool isConfig = false;
-bool isPowerOn = false;
-bool isDisplay = false;
-
 #define DEBUG
 
 template <class T>
@@ -46,8 +42,8 @@ void onIdentifyRequest()
     if (strcmp(szRequest, "INIT") == 0)
     { // Initial Configuration declaration
 
-        isPowerOn = false;
-        isConfig = false;
+        state.power = false;
+        state.configured = false;
 
         uint8_t apiVersion = messenger.readInt32Arg();
         String spadVersion = messenger.readStringArg();
@@ -78,9 +74,6 @@ void onIdentifyRequest()
     if (strcmp(szRequest, "CONFIG") == 0)
     {
         disp.printSplash(F("Configuring"));
-        isConfig = false;
-        isPowerOn = false;
-        isDisplay = false;
 
         messenger.sendCmdStart(kRequest);
         messenger.sendCmdArg("OPTION");
@@ -130,7 +123,8 @@ void onIdentifyRequest()
         // tell SPAD.neXT we are done with config
         messenger.sendCmd(kRequest, F("CONFIG"));
 
-        isConfig = true;
+        state.configured = true;
+        disp.printSplash(F("Standby"));
 
         return;
     }
@@ -144,13 +138,13 @@ void onIdentifyRequest()
         // Provides currently selected Radio
         messenger.sendCmdStart(kInput);
         messenger.sendCmdArg(iSelRadio);
-        messenger.sendCmdArg(state.radio);
+        messenger.sendCmdArg(state.radio.sel);
         messenger.sendCmdEnd();
 
         // Provides currently selected CRS
         messenger.sendCmdStart(kInput);
         messenger.sendCmdArg(iSelCRS);
-        messenger.sendCmdArg(state.crs);
+        messenger.sendCmdArg(state.nav.crs_sel);
         messenger.sendCmdEnd();
 
         messenger.sendCmd(kRequest, F("STATESCAN,2"));
@@ -164,7 +158,15 @@ void onEvent()
 
     if (strcmp(szRequest, "VIRTUALPOWER") == 0)
     {
-        uint8_t flag = messenger.readInt16Arg();
+        bool flag = messenger.readBoolArg();
+        if (flag != state.power) {
+            state.power = flag;
+
+            if (!state.power) {
+                disp.printSplash(F("-"));
+            }
+
+        }
     }
     else if (strcmp(szRequest, "PROFILECHANGED") == 0)
     {
@@ -180,13 +182,8 @@ void onEvent()
     }
     else if (strcmp(szRequest, "START") == 0)
     {
-        disp.printSplash(F("Starting..."));
-        isDisplay = false;
-        disp.setActiveRadio(state.radio);
-
-        if (isConfig)
-        {
-            isPowerOn = true;
+        if (!state.power) {
+            disp.printSplash(F("-"));
         }
     }
 }
