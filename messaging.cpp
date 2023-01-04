@@ -7,15 +7,11 @@
 //// ------   Spad Coms Section ------ ///////
 CmdMessenger messenger(Serial);
 
-#define DEBUG
-
 template <class T>
 void sendCmdDebugMsg(uint8_t command, uint8_t idx, T arg)
 {
-#ifdef DEBUG
-    disp.lastCommand(command, idx, static_cast<int32_t>(arg));
+    if (state.debug) disp.printLastCommand(command, idx, static_cast<int32_t>(arg));
     // messenger.sendCmd(kDebug, arg);
-#endif
 }
 
 // ------------------  C A L L B A C K S -----------------------
@@ -25,10 +21,10 @@ void onUnknownCommand()
 {
     uint8_t cmd = messenger.commandID();
 
-#ifdef DEBUG
-    String msg = F("Unknown command: ");
-    disp.printDebug(msg + cmd);
-#endif
+    if (state.debug) {
+        String msg = F("Unknown command: ");
+        disp.printDebug(msg + cmd);
+    }
 
     messenger.sendCmd(kDebug, F("UNKNOWN COMMAND")); // if a command comes in that is not reckognized from sketch write to the spad log
 }
@@ -147,6 +143,12 @@ void onIdentifyRequest()
         messenger.sendCmdArg(state.nav.crs_sel);
         messenger.sendCmdEnd();
 
+        // Provides currently selected Speed Mode
+        messenger.sendCmdStart(kInput);
+        messenger.sendCmdArg(iSelAPSpeed);
+        messenger.sendCmdArg(state.nav.speed_mode_sel);
+        messenger.sendCmdEnd();        
+
         messenger.sendCmd(kRequest, F("STATESCAN,2"));
         return;
     }
@@ -204,56 +206,51 @@ void onData()
 
     if (dataIdx == dValALT)
     {
-        intVal = messenger.readInt32Arg();
-        disp.setAltitude(intVal);
-        sendCmdDebugMsg(messenger.commandID(), dataIdx, intVal);
+        state.nav.alt = messenger.readInt32Arg();
+        disp.updateAltitude();
+        sendCmdDebugMsg(messenger.commandID(), dataIdx, state.nav.alt);
     }
-    else if (dataIdx == dValVS)
+    else if (dataIdx == dValSpeed)
     {
-        intVal = messenger.readInt32Arg();
-        disp.setVerticalSpeed(intVal);
-        sendCmdDebugMsg(messenger.commandID(), dataIdx, intVal);
-    }
-    else if (dataIdx == dValIAS)
-    {
-        intVal = messenger.readInt32Arg();
-        messenger.sendCmd(kDebug, F("IAS Mode not enabled")); // Writing the Spad Log that we turned the FD Annunciator ON...
+        state.nav.speed = messenger.readFloatArg();
+        disp.updateSpeed();
+        sendCmdDebugMsg(messenger.commandID(), dataIdx, state.nav.speed);
     }
     else if (dataIdx == dValHDG)
     {
-        intVal = messenger.readInt32Arg();
-        disp.setHeading(intVal);
-        sendCmdDebugMsg(messenger.commandID(), dataIdx, intVal);
+        state.nav.hdg = messenger.readInt32Arg();
+        disp.updateHeading();
+        sendCmdDebugMsg(messenger.commandID(), dataIdx, state.nav.hdg);
     }
     else if (dataIdx == dValCRS)
     {
-        intVal = messenger.readInt32Arg();
-        disp.setCourse(intVal);
-        sendCmdDebugMsg(messenger.commandID(), dataIdx, intVal);
+        state.nav.crs = messenger.readInt32Arg();
+        disp.updateCourse();
+        sendCmdDebugMsg(messenger.commandID(), dataIdx, state.nav.crs);
     }
     else if (dataIdx == dValTXPDR)
     {
-        intVal = messenger.readInt32Arg();
-        disp.setTransponderCode(intVal);
-        sendCmdDebugMsg(messenger.commandID(), dataIdx, intVal);
+        state.radio.xpdr = messenger.readInt32Arg();
+        disp.updateTransponderCode();
+        sendCmdDebugMsg(messenger.commandID(), dataIdx, state.radio.xpdr);
     }
     else if (dataIdx == dValRFREQ_A)
     {
-        floatVal = messenger.readFloatArg();
-        disp.setRadioFrequencyActive(floatVal);
-        sendCmdDebugMsg(messenger.commandID(), dataIdx, floatVal);
+        state.radio.freq.active = messenger.readFloatArg();
+        disp.updateRadioFrequencyActive();
+        sendCmdDebugMsg(messenger.commandID(), dataIdx, state.radio.freq.active);
     }
     else if (dataIdx == dValRFREQ_S)
     {
-        floatVal = messenger.readFloatArg();
-        disp.setRadioFrequencyStandby(floatVal);
-        sendCmdDebugMsg(messenger.commandID(), dataIdx, floatVal);
+        state.radio.freq.standby = messenger.readFloatArg();
+        disp.updateRadioFrequencyStandby();
+        sendCmdDebugMsg(messenger.commandID(), dataIdx, state.radio.freq.standby);
     }
     else if (dataIdx == dValBARO)
     {
-        floatVal = messenger.readFloatArg();
-        disp.setBarometer(floatVal);
-        sendCmdDebugMsg(messenger.commandID(), dataIdx, floatVal);
+        state.nav.baro = messenger.readFloatArg();
+        disp.updateBarometer();
+        sendCmdDebugMsg(messenger.commandID(), dataIdx, state.nav.baro);
     }
     else
     {
@@ -308,16 +305,10 @@ void onLED()
     else if (dataIdx == dModeVS)
     {
         lights.setVerticalSpeed(ls);
-        if (!enable)
-            disp.setVerticalSpeed(0);
     }
     else if (dataIdx == dModeAPR)
     {
         lights.setApproach(ls);
-    }
-    else if (dataIdx == dModeIAS)
-    {
-        messenger.sendCmd(kDebug, F("IAS Mode not enabled")); // Writing the Spad Log that we turned the FD Annunciator ON...
     }
     else if (dataIdx == dModeREV)
     {
@@ -348,10 +339,11 @@ void updateRadioSource(uint8_t selection)
     messenger.sendCmdArg(selection);
     messenger.sendCmdEnd();
 
-#ifdef DEBUG
-    String msg = F("Radio change: ");
-    disp.printDebug(msg + selection + "  ");
-#endif
+    if (state.debug)
+    {
+        String msg = F("Radio change: ");
+        disp.printDebug(msg + selection + "  ");
+    }
 }
 
 void updateCourseSource(uint8_t selection)
@@ -362,8 +354,23 @@ void updateCourseSource(uint8_t selection)
     messenger.sendCmdArg(selection);
     messenger.sendCmdEnd();
 
-#ifdef DEBUG
-    String msg = F("Course change: ");
-    disp.printDebug(msg + selection);
-#endif
+    if (state.debug)
+    {
+        String msg = F("Course change: ");
+        disp.printDebug(msg + selection);
+    }
+}
+
+void updateSpeedMode(uint8_t selection)
+{
+    // Provides currently selected Course
+    messenger.sendCmdStart(kInput);
+    messenger.sendCmdArg(iSelAPSpeed);
+    messenger.sendCmdArg(selection);
+    messenger.sendCmdEnd();
+
+    if (state.debug) { 
+        String msg = F("Speed change: ");
+        disp.printDebug(msg + selection);
+    }
 }

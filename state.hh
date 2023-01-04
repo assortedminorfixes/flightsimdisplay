@@ -4,7 +4,8 @@
 struct NAVData
 {
     int32_t alt = 0;
-    int16_t vs = 0;
+    float_t speed = 0;
+    uint8_t speed_mode_sel = 0;
     int16_t hdg = 0;
     uint8_t crs_sel = 0;
     int16_t crs = 0;
@@ -32,6 +33,7 @@ struct State
   bool power = false;
   bool display_static = false;
   bool configured = false;
+  bool debug = true;
 };
 
 extern struct State state;

@@ -17,8 +17,6 @@
 #include "lights.hh"
 #include "featherwing_touch.hh"
 
-#define DEBUG
-
 Display disp{};
 LightController lights{};
 
@@ -30,6 +28,7 @@ void setup()
   // 115200 is typically the maximum speed for serial over USB
   Serial.begin(115200);
 
+  // Initialize the Display including Touch
   disp.initDisplay();
 
   // Attach my application's user-defined callback methods
@@ -45,33 +44,41 @@ void loop()
   // Process incoming serial data, and perform callbacks
   messenger.feedinSerialData();
 
-  if (!state.display_static && state.power)
+  // If virtual power is on, but the screen layout is not printed,
+  // then print the static layout and update course label and redraw
+  // data values.
+  if (state.configured && state.power && !state.display_static)
   {
     disp.printStatic();
     disp.updateCourseLabel(state.nav.crs_sel);
+    disp.updateSpeedLabel(state.nav.speed_mode_sel);
     disp.redraw(true);
   }
 
-  if (state.configured && state.display_static)
+  // If device is configured, powered and initalized, then
+  // process touches and perform updates to display and lights.
+  if (state.configured && state.power && state.display_static)
   {
-
     if ((millis() - state.last_touch) > TS_DOUBLETOUCH_DELAY)
     {
       TouchEvent te = disp.processTouch();
       if (te.event != TouchEventType::NO_TOUCH)
       {
-
-        if (te.event == TouchEventType::NAV_BUTTON)
+        switch(te.event)
         {
-          updateRadioSource(te.value);
-          state.last_touch = millis();
+          case TouchEventType::NAV_BUTTON:
+            updateRadioSource(te.value);
+            break;
+          case TouchEventType::CRS_BUTTON:
+            updateCourseSource(te.value);
+            disp.updateCourseLabel(te.value);
+            break;
+          case TouchEventType::SPEED_BUTTON:
+            updateSpeedMode(te.value);
+            disp.updateSpeedLabel(te.value);
+            break;
         }
-        else if (te.event == TouchEventType::CRS_BUTTON)
-        {
-          updateCourseSource(te.value);
-          disp.updateCourseLabel(te.value);
-          state.last_touch = millis();
-        }
+        state.last_touch = millis();             
       }
     }
     else
@@ -82,9 +89,8 @@ void loop()
     disp.redraw();
     lights.update();
 
-#ifdef DEBUG
-    disp.printMem();
-#endif
+    if (state.debug) disp.printMem();
+
   }
 
 } // End of the Main Loop
