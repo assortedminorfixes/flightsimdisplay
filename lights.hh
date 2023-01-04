@@ -18,6 +18,8 @@
 #define LIGHT_BACKLIGHT 16
 #define LIGHT_OFF 0
 
+#define REFRESH_RATE 200
+
 enum LightStyle : uint8_t {
    OFF = LIGHT_OFF,
    DIM = LIGHT_DIM,
@@ -48,6 +50,8 @@ class LightController {
         void updatePinToStyle(uint8_t pixel, LightStyle style);
         void updatePinToStyle(uint8_t pixel, LightState state);
         uint32_t convertStateToColor(LightState state);
+        unsigned long lastRefresh;
+        bool update_due = false;
 
     public:
         LightController();
