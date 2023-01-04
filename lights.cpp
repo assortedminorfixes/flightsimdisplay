@@ -126,11 +126,13 @@ void LightController::setApproach(bool on)
 
 void LightController::updatePinToStyle(uint8_t pixel, LightState state)
 {
+    update_due = true;
     pixelState[pixel] = state;
 }
 
 void LightController::updatePinToStyle(uint8_t pixel, LightStyle style)
 {
+    update_due = true;
     pixelState[pixel].style = style;
     pixelState[pixel].color = LightColor::WHITE;
 }
@@ -158,10 +160,14 @@ uint32_t LightController::convertStateToColor(LightState state)
 
 void LightController::update()
 {
-    for (int p = 0; p < PIXEL_NUM; p++) {
-            strip.setPixelColor(p, convertStateToColor(pixelState[p]));
+    if (update_due || ((millis() - lastRefresh) > REFRESH_RATE)) {
+        for (int p = 0; p < PIXEL_NUM; p++) {
+                strip.setPixelColor(p, convertStateToColor(pixelState[p]));
+        }
+        lastRefresh = millis();
+        update_due = false;
+        strip.show();
     }
-    strip.show();
 }
 
 // Fill the dots one after the other with a color
