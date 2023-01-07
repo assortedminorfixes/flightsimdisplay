@@ -1,6 +1,6 @@
 # Flight Simulator Display
 
-Using Arduino to create the display part of a pseudo Flight Control Unit
+Using Arduino to create the display part of a pseudo Flight Control Unit for Microsoft Flight Simulator 2020.
 
 Inspired by Spad.Next Serial Interface v1 Simple Autopilot by Les O'Reilly. Using Adafruit Feather with 3.5" Touch Wing. Display is 'passive' with exception of touch to change radio and course.Button inputs are separate using a Leo Bodnar BBI-32.
 
