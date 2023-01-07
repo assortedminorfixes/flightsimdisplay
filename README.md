@@ -2,9 +2,9 @@
 
 Using Arduino to create the display part of a pseudo Flight Control Unit for Microsoft Flight Simulator 2020.
 
-Inspired by Spad.Next Serial Interface v1 Simple Autopilot by Les O'Reilly. Using Adafruit Feather with 3.5" Touch Wing. Display is 'passive' with exception of touch to change radio and course.Button inputs are separate using a Leo Bodnar BBI-32.
+Inspired by Spad.Next Serial Interface v1 Simple Autopilot by Les O'Reilly. Using Adafruit Feather with 3.5" Touch Wing. Display is 'passive' with exception of touch to change radio and course. Button inputs are separate using a Leo Bodnar BBI-32.
 
-Current version is extensively using the SUBCRIBE patten in Spad.Next Serial. Data Values used can be found in messaging.cpp; it is using Simconnect values to improve compatibility.
+Current version is using the SPAD.next Serial V2 pattern, using the INPUT and OUTPUT types instead of DATA and SUBSCRIBE. Mapping between displayed values and the variables are done in SPAD.next.
 
 Display is based on the B612 font (https://github.com/polarsys/b612), converted for use with Adafruit GFX using fontconvert.
 
