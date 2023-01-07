@@ -59,8 +59,8 @@ int freeMemory()
 #define DATA_ALT_POS_X 0
 #define DATA_ALT_POS_Y 180
 
-#define DATA_VS_POS_X 160
-#define DATA_VS_POS_Y 180
+#define DATA_SPEED_POS_X 160
+#define DATA_SPEED_POS_Y 180
 
 #define DATA_HDG_POS_X 0
 #define DATA_HDG_POS_Y 265
@@ -84,8 +84,8 @@ int freeMemory()
 #define TS_MAXX 3800
 #define TS_MAXY 4000
 
-static const char *const RADIO_BUTTON_LABEL[] = {"NAV1", "NAV2", "COM1", "COM2",
-                                                 "ADF"};
+
+
 
 Display::Display() : cCenter(CANVAS_CENTER_W, CANVAS_CENTER_H),
                      lcd(TFT_CS, TFT_DC, TFT_RST),
@@ -115,6 +115,7 @@ TouchEvent Display::processTouch()
 {
     int8_t nav_sel = -1;
     int8_t crs_sel = -1;
+    int8_t speed_sel = -1;
 
     if (!ts.bufferEmpty())
     {
@@ -130,45 +131,50 @@ TouchEvent Display::processTouch()
                 {
                     if (p.x > (15 + (RADIO_BUTTON_V + 10) * i) && p.x < (5 + (RADIO_BUTTON_V + 10) * (i + 1)))
                     {
-                        lcd.drawCircle(p.x, p.y, 1, HX8357_CYAN);
+                        if (state.debug) lcd.drawCircle(p.x, p.y, 1, HX8357_CYAN);
                         nav_sel = i;
                     }
                 }
             }
-            else if (p.y > 260 && p.y < 325 && p.x > 160)
+            // CRS Selector
+            else if (p.y > 235 && p.y < 320 && p.x > 160)
             {
-                lcd.drawCircle(p.x, p.y, 1, HX8357_CYAN);
+                if (state.debug) lcd.drawCircle(p.x, p.y, 1, HX8357_CYAN);
                 crs_sel = 1;
+            }
+            // Speed Selector
+            else if (p.y > 150 && p.y < 225 && p.x > 160)
+            {
+                if (state.debug) lcd.drawCircle(p.x, p.y, 1, HX8357_CYAN);
+                speed_sel = 1;
             }
         }
         if (nav_sel > -1 && (nav_sel != state.radio.sel))
         {
             state.radio.sel = nav_sel;
-            update.radio_buttons = true;
-            TouchEvent te;
-            te.event = TouchEventType::NAV_BUTTON;
-            te.value = nav_sel;
-            return te;
+            update.radio_select_buttons = true;
+            return TouchEvent(TouchEventType::NAV_BUTTON, state.radio.sel);
         }
         else if (crs_sel > -1)
         {
-            state.nav.crs_sel = (state.nav.crs_sel + 1) % MSG_COURSES;
+            state.nav.crs_sel = (state.nav.crs_sel + 1) % this->crs_labels;
             update.crs = true;
-            TouchEvent te;
-            te.event = TouchEventType::CRS_BUTTON;
-            te.value = state.nav.crs_sel;
-            return te;
+            return TouchEvent(TouchEventType::CRS_BUTTON, state.nav.crs_sel);            
         }
+        else if (speed_sel > -1)
+        {
+            state.nav.speed_mode_sel = (state.nav.speed_mode_sel + 1) % this->speed_labels;
+            update.speed = true;
+            return TouchEvent(TouchEventType::SPEED_BUTTON, state.nav.speed_mode_sel);
+        }        
         else
         {
-            TouchEvent te;
-            return te;
+            return TouchEvent();
         }
     }
     else
     {
-        TouchEvent te;
-        return te;
+        return TouchEvent();
     }
 }
 
@@ -205,14 +211,14 @@ void Display::printStatic()
     lcd.setCursor(5, 175);
     lcd.print(F("Altitude"));
     lcd.setCursor(165, 175);
-    lcd.print(F("VS"));
+    lcd.print(F("")); // Room for Vertical Speed Label
 
     lcd.drawFastHLine(0, 230, 320, HX8357_WHITE);
 
     lcd.setCursor(5, 260);
     lcd.print(F("Heading"));
     lcd.setCursor(165, 260);
-    lcd.print(F("Course"));
+    lcd.print(F("")); // Room for Course Label
 
     lcd.drawFastHLine(0, 325, 320, HX8357_WHITE);
 
@@ -227,7 +233,7 @@ void Display::printStatic()
 
 }
 
-void Display::printButtons(uint8_t active)
+void Display::drawRadioSelectButton(uint8_t active)
 {
 
     uint16_t colors[5] = {HX8357_CUST_GRAY, HX8357_CUST_GRAY, HX8357_CUST_GRAY, HX8357_CUST_GRAY, HX8357_CUST_GRAY};
@@ -245,7 +251,7 @@ void Display::printButtons(uint8_t active)
         lcd.print(F(RADIO_BUTTON_LABEL[i]));
     }
 
-    update.radio_buttons = false;
+    update.radio_select_buttons = false;
 }
 
 void Display::redraw(bool full)
@@ -254,12 +260,12 @@ void Display::redraw(bool full)
         drawRadioActive();
     if (update.radio_standby || full)
         drawRadioStandby();
-    if (update.radio_buttons || full)
-        printButtons(state.radio.sel);
+    if (update.radio_select_buttons || full)
+        drawRadioSelectButton(state.radio.sel);
     if (update.alt || full)
         drawAltitude();
-    if (update.vs || full)
-        drawVerticalSpeed();
+    if (update.speed || full)
+        drawSpeed();
     if (update.hdg || full)
         drawHeading();
     if (update.crs || full)
@@ -270,9 +276,8 @@ void Display::redraw(bool full)
         drawBarometer();
 }
 
-void Display::setAltitude(int32_t alt)
+void Display::updateAltitude()
 {
-    state.nav.alt = alt;
     update.alt = true;
 }
 
@@ -289,59 +294,84 @@ void Display::drawAltitude()
     update.alt = false;
 }
 
-void Display::setVerticalSpeed(int16_t vs)
+void Display::updateSpeed()
 {
-    state.nav.vs = vs;
-    update.vs = true;
+    update.speed = true;
 }
 
-void Display::drawVerticalSpeed()
+void Display::updateSpeedLabel(uint8_t selection)
+{
+    lcd.setFont(&B612_Regular10pt7b);
+    lcd.setTextColor(HX8357_BLACK);
+    lcd.setCursor(165, 175);
+    lcd.printf("%s ", SPEED_LABEL[(selection + (this->speed_labels - 1)) % this->speed_labels]);
+
+    lcd.setTextColor(HX8357_GREEN);
+    lcd.setCursor(165, 175);
+    lcd.printf("%s ", SPEED_LABEL[selection]);
+}
+
+void Display::drawSpeed()
 {
     GFXcanvas1 canvas(CANVAS_NUM_W, CANVAS_NUM_H);
     canvas.setFont(&B612Mono_Regular18pt7b);
     canvas.setCursor(CANVAS_NUM_UL_X, CANVAS_NUM_UL_Y);
-    if (state.nav.vs != 0)
-    {
-        canvas.printf("%5i", state.nav.vs);
-        lcd.drawBitmap(DATA_VS_POS_X, DATA_VS_POS_Y, canvas.getBuffer(), CANVAS_NUM_W, CANVAS_NUM_H, HX8357_CYAN, HX8357_BLACK);
+    if (state.nav.speed_mode_sel == 0) {
+        if (state.nav.speed != 0) {
+            canvas.printf("%5i", (int16_t) state.nav.speed);  // VS
+            lcd.drawBitmap(DATA_SPEED_POS_X, DATA_SPEED_POS_Y, canvas.getBuffer(), CANVAS_NUM_W, CANVAS_NUM_H, HX8357_CYAN, HX8357_BLACK);
+        }
+        else
+        {
+            canvas.printf("-----");
+            lcd.drawBitmap(DATA_SPEED_POS_X, DATA_SPEED_POS_Y, canvas.getBuffer(), CANVAS_NUM_W, CANVAS_NUM_H, HX8357_CYAN, HX8357_BLACK);
+        }
     }
-    else
-    {
-        canvas.printf("-----");
-        lcd.drawBitmap(DATA_VS_POS_X, DATA_VS_POS_Y, canvas.getBuffer(), CANVAS_NUM_W, CANVAS_NUM_H, HX8357_CYAN, HX8357_BLACK);
+    else if (state.nav.speed_mode_sel == 1) {
+        if (state.nav.speed > 0 and state.nav.speed < 5) {
+            canvas.printf("%4.2f", state.nav.speed);  // Mach
+
+            GFXcanvas1 dec_canv = this->trimDecimal(state.nav.speed, 1, 2, CANVAS_NUM_UL_X, CANVAS_NUM_UL_Y, &B612Mono_Regular18pt7b);
+            lcd.drawBitmap(DATA_SPEED_POS_X, DATA_SPEED_POS_Y, dec_canv.getBuffer(), CANVAS_NUM_W, CANVAS_NUM_H, HX8357_CYAN, HX8357_BLACK);        
+        }
+        else if (state.nav.speed >= 5) {
+            canvas.printf("%3i", (int16_t) state.nav.speed);  // IAS
+            lcd.drawBitmap(DATA_SPEED_POS_X, DATA_SPEED_POS_Y, canvas.getBuffer(), CANVAS_NUM_W, CANVAS_NUM_H, HX8357_CYAN, HX8357_BLACK);
+        }
+        else
+        {
+            canvas.printf("-----");
+            lcd.drawBitmap(DATA_SPEED_POS_X, DATA_SPEED_POS_Y, canvas.getBuffer(), CANVAS_NUM_W, CANVAS_NUM_H, HX8357_CYAN, HX8357_BLACK);
+        }
     }
-    update.vs = false;
+    update.speed = false;
 }
 
-void Display::setHeading(int16_t hdg)
+void Display::updateHeading()
 {
-    if (hdg == 0)
-        state.nav.hdg = 360;
-    else
-        state.nav.hdg = hdg;
-
     update.hdg = true;
 }
 
 void Display::drawHeading()
 {
+    int16_t print_hdg;
+    if (state.nav.hdg == 0)
+        print_hdg = 360;
+    else
+        print_hdg = state.nav.hdg;
+
     GFXcanvas1 canvas(CANVAS_NUM_LARGE_W, CANVAS_NUM_LARGE_H);
     canvas.setFont(&B612Mono_Regular24pt7b);
     canvas.setCursor(5, 45);
-    canvas.printf("%03i", state.nav.hdg);
+    canvas.printf("%03i", print_hdg);
     canvas.setFont(&B612Mono_Regular24pt8b);
     canvas.printf(deg);
     lcd.drawBitmap(DATA_HDG_POS_X, DATA_HDG_POS_Y, canvas.getBuffer(), CANVAS_NUM_LARGE_W, CANVAS_NUM_LARGE_H, HX8357_WHITE, HX8357_BLACK);
     update.hdg = false;
 }
 
-void Display::setCourse(int16_t crs)
+void Display::updateCourse()
 {
-    if (crs == 0)
-        state.nav.crs = 360;
-    else
-        state.nav.crs = crs;
-
     update.crs = true;
 }
 
@@ -350,29 +380,33 @@ void Display::updateCourseLabel(uint8_t selection)
     lcd.setFont(&B612_Regular10pt7b);
     lcd.setTextColor(HX8357_BLACK);
     lcd.setCursor(165, 260);
-    lcd.printf("Course %s ", crs_subscribe[(selection + (MSG_COURSES - 1)) % MSG_COURSES][1]);
+    lcd.printf("Course %s ", CRS_LABEL[(selection + (this->crs_labels - 1)) % this->crs_labels]);
 
     lcd.setTextColor(HX8357_GREEN);
     lcd.setCursor(165, 260);
-    lcd.printf("Course %s ", crs_subscribe[selection][1]);
+    lcd.printf("Course %s ", CRS_LABEL[selection]);
 }
 
 void Display::drawCourse()
 {
+    int16_t print_crs;
+    if (state.nav.crs == 0)
+        print_crs = 360;
+    else
+        print_crs = state.nav.crs;
 
     GFXcanvas1 canvas(CANVAS_NUM_LARGE_W, CANVAS_NUM_LARGE_H);
     canvas.setFont(&B612Mono_Regular24pt7b);
     canvas.setCursor(5, 45);
-    canvas.printf("%03i", state.nav.crs);
+    canvas.printf("%03i", print_crs);
     canvas.setFont(&B612Mono_Regular24pt8b);
     canvas.printf(deg);
     lcd.drawBitmap(DATA_CRS_POS_X, DATA_CRS_POS_Y, canvas.getBuffer(), CANVAS_NUM_LARGE_W, CANVAS_NUM_LARGE_H, HX8357_WHITE, HX8357_BLACK);
     update.crs = false;
 }
 
-void Display::setTransponderCode(int16_t xpdr)
+void Display::updateTransponderCode()
 {
-    state.radio.xpdr = xpdr;
     update.xpdr = true;
 }
 
@@ -393,9 +427,8 @@ void Display::drawTransponderCode()
     update.xpdr = false;
 }
 
-void Display::setBarometer(float_t baro)
+void Display::updateBarometer()
 {
-    state.nav.baro = baro;
     update.baro = true;
 }
 
@@ -406,23 +439,20 @@ void Display::drawBarometer()
     update.baro = false;
 }
 
-void Display::setActiveRadio(uint8_t sel)
+void Display::updateActiveRadio()
 {
-    state.radio.sel = sel;
     update.radio_active = true;
     update.radio_standby = true;
-    update.radio_buttons = true;
+    update.radio_select_buttons = true;
 }
 
-void Display::setRadioFrequencyActive(float_t freq)
+void Display::updateRadioFrequencyActive()
 {
-    state.radio.freq.active = freq;
     update.radio_active = true;
 }
 
-void Display::setRadioFrequencyStandby(float_t freq)
+void Display::updateRadioFrequencyStandby()
 {
-    state.radio.freq.standby = freq;
     update.radio_standby = true;
 }
 
@@ -460,7 +490,7 @@ void Display::drawRadioStandby()
     update.radio_standby = false;
 }
 
-void Display::lastCommand(uint8_t command, uint8_t idx, int32_t val)
+void Display::printLastCommand(uint8_t command, uint8_t idx, int32_t val)
 {
     lcd.setTextColor(HX8357_CYAN, HX8357_BLACK);
     lcd.setFont(NULL);

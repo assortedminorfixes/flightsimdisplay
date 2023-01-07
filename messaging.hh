@@ -31,8 +31,7 @@ enum : byte
     dModeAPR = 27,    //
     dModeREV = 28,    //
     dValALT = 29,     //
-    dValVS = 30,      //
-    dValIAS = 31,     //
+    dValSpeed = 30,      //
     dValHDG = 32,     //
     dValCRS = 33,     //
     dValTXPDR = 34,   //
@@ -45,13 +44,7 @@ enum : byte
 {
     iSelRadio = 1,
     iSelCRS = 2,
-};
-
-struct Subscription
-{
-    uint8_t cmd;
-    const char *data;
-    bool enable;
+    iSelAPSpeed = 3
 };
 
 struct InputOutput
@@ -63,10 +56,11 @@ struct InputOutput
     const char *args;
 };
 
-#define MSG_INPUTS 2
+#define MSG_INPUTS 3
 const InputOutput inputs[MSG_INPUTS] PROGMEM = {
     {iSelRadio, "S_RADIO", "ROTARY", "SPAD_ENCODER_NOACC", "POS_NAMES=NAV1#NAV2#COM1#COM2#ADF,POS_VALUES=0#1#2#3#4"},
-    {iSelCRS, "S_CRS", "ROTARY", "SPAD_ENCODER_NOACC", "POS_NAMES=CRS1#CRS2#GPS,POS_VALUES=0#1#2"}
+    {iSelCRS, "S_CRS", "ROTARY", "SPAD_ENCODER_NOACC", "POS_NAMES=CRS1#CRS2#GPS,POS_VALUES=0#1#2"},
+    {iSelAPSpeed, "S_AP_SPEED", "ROTARY", "SPAD_ENCODER_NOACC", "POS_NAMES=SPD_VERT#SPD_AIR,POS_VALUES=0#1"}
 };
 
 #define MSG_OUTPUTS 14
@@ -80,18 +74,16 @@ const InputOutput outputs[MSG_OUTPUTS] PROGMEM = {
     {dValHDG, "D_AP_HDG", "DISPLAY", "SPAD_DISPLAY", "LENGTH=3"},
     {dValCRS, "D_AP_CRS", "DISPLAY", "SPAD_DISPLAY", "LENGTH=3"},
     {dValALT, "D_AP_ALT", "DISPLAY", "SPAD_DISPLAY", "LENGTH=5"},
-    {dValVS, "D_AP_VS", "DISPLAY", "SPAD_DISPLAY", "LENGTH=5"},
+    {dValSpeed, "D_AP_SPEED", "DISPLAY", "SPAD_DISPLAY", "LENGTH=5"},
     {dValTXPDR, "D_XPDR", "DISPLAY", "SPAD_DISPLAY", "LENGTH=4"},
     {dValBARO, "D_BARO", "DISPLAY", "SPAD_DISPLAY", "LENGTH=5"},
     {dValRFREQ_A, "D_RADIO_ACTIVE_FREQ", "DISPLAY", "SPAD_DISPLAY", "LENGTH=7"},
     {dValRFREQ_S, "D_RADIO_STANDBY_FREQ", "DISPLAY", "SPAD_DISPLAY", "LENGTH=7"}
 };
 
-#define MSG_COURSES 3
-const char *const crs_subscribe[MSG_COURSES][2] PROGMEM = {{"SIMCONNECT:NAV OBS:1", "OBS 1"}, {"SIMCONNECT:NAV OBS:2", "OBS 2"}, {"SIMCONNECT:GPS WP DESIRED TRACK,DEGREES", "GPS DTK"}};
-
 void attachCommandCallbacks();
 void updateRadioSource(uint8_t selection);
 void updateCourseSource(uint8_t selection);
+void updateSpeedMode(uint8_t selection);
 extern CmdMessenger messenger;
 #endif

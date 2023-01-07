@@ -10,30 +10,41 @@
 enum TouchEventType {
    NO_TOUCH,
    NAV_BUTTON,
-   CRS_BUTTON
+   CRS_BUTTON,
+   SPEED_BUTTON
 };
 
 class TouchEvent {
    public:
-      TouchEventType event = NO_TOUCH;
-      uint8_t value = 0;
+      TouchEventType event;
+      uint8_t value;
+
+      TouchEvent() : event(TouchEventType::NO_TOUCH), value(0) {}
+      TouchEvent(TouchEventType e, uint8_t v) : event(e), value(v) {}
 };
 
 class Display {
 
    private:
+      const char *RADIO_BUTTON_LABEL[5] = {"NAV1", "NAV2", "COM1", "COM2",
+                                           "ADF"};
+      const char *CRS_LABEL[3] = {"OBS 1", "OBS 2", "GPS DTK"};
+      const char *SPEED_LABEL[2] = {"VS", "Speed"};
+
       GFXcanvas1 cCenter;
       const char deg[1]  = {0xB0};
+      const uint8_t crs_labels = sizeof(CRS_LABEL) / sizeof(CRS_LABEL[0]);
+      const uint8_t speed_labels = sizeof(SPEED_LABEL) / sizeof(SPEED_LABEL[0]);
 
       struct Update
       {
          bool alt = false;
-         bool vs = false;
+         bool speed = false;
          bool hdg = false;
          bool crs = false;
          bool radio_active = false;
          bool radio_standby = false;
-         bool radio_buttons = false;
+         bool radio_select_buttons = false;
          bool xpdr = false;
          bool baro = false;
       };
@@ -41,42 +52,47 @@ class Display {
       struct Update update;
 
       void drawAltitude();
-      void drawVerticalSpeed();
+      void drawSpeed();
       void drawHeading();
       void drawCourse();
       void drawTransponderCode();
       void drawRadioActive();
       void drawRadioStandby();
       void drawBarometer();
-      GFXcanvas1 trimDecimal(float_t num, uint8_t padding, uint8_t decimals, int x, int y, const GFXfont *font);
-      String getStringValue(String data, char separator, int index);
-   // Define TFT
-   public:
-      
-      Display();
+      void drawRadioSelectButton(uint8_t active = 0);
+
       Adafruit_HX8357 lcd;
       Adafruit_STMPE610 ts;
+      GFXcanvas1 trimDecimal(float_t num, uint8_t padding, uint8_t decimals, int x, int y, const GFXfont *font);
+      String getStringValue(String data, char separator, int index);
+
+   public:     
+      Display();
+      
       void initDisplay();
-      void printButtons(uint8_t active = 0);
       void printStatic();
       void printSplash(String str);
+      void printLastCommand(uint8_t command, uint8_t index, int32_t value);
+      void printDebug(String msg);
+      void printMem();
+
       void redraw(bool full = false);
+
       TouchEvent processTouch();
       void clearTouch();
       
-      void setAltitude(int32_t alt);
-      void setVerticalSpeed(int16_t vs);
-      void setHeading(int16_t hdg);
-      void setCourse(int16_t crs);
+      void updateAltitude();
+      void updateSpeed();
+      void updateSpeedLabel(uint8_t selection);
+      void updateHeading();
+      void updateCourse();
       void updateCourseLabel(uint8_t selection);
-      void setTransponderCode(int16_t xpdr);
-      void setRadioFrequencyActive(float_t freq);
-      void setRadioFrequencyStandby(float_t freq);
-      void setActiveRadio(uint8_t radio);
-      void setBarometer(float_t baro);
-      void lastCommand(uint8_t command, uint8_t index, int32_t value);
-      void printDebug(String msg);
-      void printMem();
+      void updateTransponderCode();
+      void updateRadioFrequencyActive();
+      void updateRadioFrequencyStandby();
+      void updateActiveRadio();
+      void updateBarometer();
+
 };
 
 extern Display disp;
