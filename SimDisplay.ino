@@ -52,6 +52,7 @@ void loop()
     disp.printStatic();
     disp.updateCourseLabel(state.nav.crs_sel);
     disp.updateSpeedLabel(state.nav.speed_mode_sel);
+    disp.updateBarometerLabel(state.nav.baro_mode_sel);
     disp.redraw(true);
   }
 
@@ -64,21 +65,25 @@ void loop()
       TouchEvent te = disp.processTouch();
       if (te.event != TouchEventType::NO_TOUCH)
       {
-        switch(te.event)
+        switch (te.event)
         {
-          case TouchEventType::NAV_BUTTON:
-            updateRadioSource(te.value);
-            break;
-          case TouchEventType::CRS_BUTTON:
-            updateCourseSource(te.value);
-            disp.updateCourseLabel(te.value);
-            break;
-          case TouchEventType::SPEED_BUTTON:
-            updateSpeedMode(te.value);
-            disp.updateSpeedLabel(te.value);
-            break;
+        case TouchEventType::NAV_BUTTON:
+          updateRadioSource(te.value);
+          break;
+        case TouchEventType::CRS_BUTTON:
+          updateCourseSource(te.value);
+          disp.updateCourseLabel(te.value);
+          break;
+        case TouchEventType::SPEED_BUTTON:
+          updateSpeedMode(te.value);
+          disp.updateSpeedLabel(te.value);
+          break;
+        case TouchEventType::BARO_BUTTON:
+          updateBaroMode(te.value);
+          disp.updateBarometerLabel(te.value);
+          break;
         }
-        state.last_touch = millis();             
+        state.last_touch = millis();
       }
     }
     else
@@ -89,8 +94,8 @@ void loop()
     disp.redraw();
     lights.update();
 
-    if (state.debug) disp.printMem();
-
+    if (state.debug)
+      disp.printMem();
   }
 
 } // End of the Main Loop

@@ -44,7 +44,8 @@ enum : byte
 {
     iSelRadio = 1,
     iSelCRS = 2,
-    iSelAPSpeed = 3
+    iSelAPSpeed = 3,
+    iSelBaro = 4
 };
 
 struct InputOutput
@@ -56,11 +57,12 @@ struct InputOutput
     const char *args;
 };
 
-#define MSG_INPUTS 3
+#define MSG_INPUTS 4
 const InputOutput inputs[MSG_INPUTS] PROGMEM = {
     {iSelRadio, "S_RADIO", "ROTARY", "SPAD_ENCODER_NOACC", "POS_NAMES=NAV1#NAV2#COM1#COM2#ADF,POS_VALUES=0#1#2#3#4"},
     {iSelCRS, "S_CRS", "ROTARY", "SPAD_ENCODER_NOACC", "POS_NAMES=CRS1#CRS2#GPS,POS_VALUES=0#1#2"},
-    {iSelAPSpeed, "S_AP_SPEED", "ROTARY", "SPAD_ENCODER_NOACC", "POS_NAMES=SPD_VERT#SPD_AIR,POS_VALUES=0#1"}
+    {iSelAPSpeed, "S_AP_SPEED", "ROTARY", "SPAD_ENCODER_NOACC", "POS_NAMES=SPD_VERT#SPD_AIR,POS_VALUES=0#1"},
+    {iSelBaro, "S_BARO", "ROTARY", "SPAD_ENCODER_NOACC", "POS_NAMES=BARO_HPA#BARO_INHG,POS_VALUES=0#1"}    
 };
 
 #define MSG_OUTPUTS 14
@@ -85,5 +87,6 @@ void attachCommandCallbacks();
 void updateRadioSource(uint8_t selection);
 void updateCourseSource(uint8_t selection);
 void updateSpeedMode(uint8_t selection);
+void updateBaroMode(uint8_t selection);
 extern CmdMessenger messenger;
 #endif
