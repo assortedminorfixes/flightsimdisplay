@@ -79,6 +79,7 @@ void onIdentifyRequest()
         messenger.sendCmdArg("NO_DISPLAY_CLEAR=" + String(1));
         messenger.sendCmdArg("VPSUPPORT=" + String(1));
         messenger.sendCmdArg("UI_TYPE=0");
+        messenger.sendCmdArg("DEFAULT_PANEL=Switches");
         messenger.sendCmdEnd();
 
         messenger.sendCmdStart(kRequest);
@@ -89,6 +90,7 @@ void onIdentifyRequest()
         messenger.sendCmdArg(F("SPAD_VIRTUAL_POWER"));
         messenger.sendCmdArg(F("UI_TYPE=3"));
         messenger.sendCmdArg(F("CUSTOM_TYPE=POWER"));
+        messenger.sendCmdArg(F("PANEL=Switches"));
         messenger.sendCmdEnd();
 
         // Expose Inputs
@@ -101,6 +103,7 @@ void onIdentifyRequest()
             messenger.sendCmdArg(inputs[i].type);
             messenger.sendCmdArg(inputs[i].inherit);
             messenger.sendCmdArg(inputs[i].args);
+            messenger.sendCmdArg(F("PANEL=Switches"));
             messenger.sendCmdEnd();
         }
 
