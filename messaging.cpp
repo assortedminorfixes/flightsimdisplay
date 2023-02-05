@@ -164,6 +164,7 @@ void onEvent()
 
             if (!state.power) {
                 disp.printSplash(F("-"));
+                lights.update();
             }
 
         }

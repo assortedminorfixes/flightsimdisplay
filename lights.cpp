@@ -1,4 +1,5 @@
 #include "lights.hh"
+#include "state.hh"
 #include "Arduino.h"
 
 LightController::LightController() : strip(PIXEL_NUM, PIXEL_PIN, NEO_GRBW + NEO_KHZ800)
@@ -137,32 +138,44 @@ void LightController::updatePinToStyle(uint8_t pixel, LightStyle style)
     pixelState[pixel].color = LightColor::WHITE;
 }
 
-uint32_t LightController::convertStateToColor(LightState state) 
+uint32_t LightController::convertStateToColor(LightState state)
 {
-    
+
     uint32_t color = 0;
-    
-    switch (state.color) {
-        case LightColor::GREEN:
-            color = strip.Color(0, state.style, 0, 0);
-            break;
-        case LightColor::YELLOW:
-            color = strip.Color(state.style, state.style, 0, 0);
-            break;
-        case LightColor::WHITE:
-            color = strip.Color(0, 0, 0, state.style);        
-            break;
+
+    switch (state.color)
+    {
+    case LightColor::GREEN:
+        color = strip.Color(0, state.style, 0, 0);
+        break;
+    case LightColor::YELLOW:
+        color = strip.Color(state.style, state.style, 0, 0);
+        break;
+    case LightColor::WHITE:
+        color = strip.Color(0, 0, 0, state.style);
+        break;
     }
 
     return color;
-
 }
 
 void LightController::update()
 {
-    if (update_due || ((millis() - lastRefresh) > REFRESH_RATE)) {
-        for (int p = 0; p < PIXEL_NUM; p++) {
+    if (update_due || ((millis() - lastRefresh) > REFRESH_RATE))
+    {
+        if (state.power)
+        {
+            for (int p = 0; p < PIXEL_NUM; p++)
+            {
                 strip.setPixelColor(p, convertStateToColor(pixelState[p]));
+            }
+        }
+        else
+        {
+            for (int p = 0; p < PIXEL_NUM; p++)
+            {
+                strip.setPixelColor(p, strip.Color(0, 0, 0, 0));
+            }
         }
         lastRefresh = millis();
         update_due = false;
