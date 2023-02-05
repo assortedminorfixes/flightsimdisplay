@@ -84,9 +84,6 @@ int freeMemory()
 #define TS_MAXX 3800
 #define TS_MAXY 4000
 
-
-
-
 Display::Display() : cCenter(CANVAS_CENTER_W, CANVAS_CENTER_H),
                      lcd(TFT_CS, TFT_DC, TFT_RST),
                      ts(STMPE_CS)
@@ -116,6 +113,7 @@ TouchEvent Display::processTouch()
     int8_t nav_sel = -1;
     int8_t crs_sel = -1;
     int8_t speed_sel = -1;
+    int8_t baro_sel = -1;
 
     if (!ts.bufferEmpty())
     {
@@ -131,7 +129,8 @@ TouchEvent Display::processTouch()
                 {
                     if (p.x > (15 + (RADIO_BUTTON_V + 10) * i) && p.x < (5 + (RADIO_BUTTON_V + 10) * (i + 1)))
                     {
-                        if (state.debug) lcd.drawCircle(p.x, p.y, 1, HX8357_CYAN);
+                        if (state.debug)
+                            lcd.drawCircle(p.x, p.y, 1, HX8357_CYAN);
                         nav_sel = i;
                     }
                 }
@@ -139,14 +138,23 @@ TouchEvent Display::processTouch()
             // CRS Selector
             else if (p.y > 235 && p.y < 320 && p.x > 160)
             {
-                if (state.debug) lcd.drawCircle(p.x, p.y, 1, HX8357_CYAN);
+                if (state.debug)
+                    lcd.drawCircle(p.x, p.y, 1, HX8357_CYAN);
                 crs_sel = 1;
             }
             // Speed Selector
             else if (p.y > 150 && p.y < 225 && p.x > 160)
             {
-                if (state.debug) lcd.drawCircle(p.x, p.y, 1, HX8357_CYAN);
+                if (state.debug)
+                    lcd.drawCircle(p.x, p.y, 1, HX8357_CYAN);
                 speed_sel = 1;
+            }
+            // Baro Selector
+            else if (p.y > 340 && p.y < 415 && p.x > 160)
+            {
+                if (state.debug)
+                    lcd.drawCircle(p.x, p.y, 1, HX8357_CYAN);
+                baro_sel = 1;
             }
         }
         if (nav_sel > -1 && (nav_sel != state.radio.sel))
@@ -159,14 +167,20 @@ TouchEvent Display::processTouch()
         {
             state.nav.crs_sel = (state.nav.crs_sel + 1) % this->crs_labels;
             update.crs = true;
-            return TouchEvent(TouchEventType::CRS_BUTTON, state.nav.crs_sel);            
+            return TouchEvent(TouchEventType::CRS_BUTTON, state.nav.crs_sel);
         }
         else if (speed_sel > -1)
         {
             state.nav.speed_mode_sel = (state.nav.speed_mode_sel + 1) % this->speed_labels;
             update.speed = true;
             return TouchEvent(TouchEventType::SPEED_BUTTON, state.nav.speed_mode_sel);
-        }        
+        }
+        else if (baro_sel > -1)
+        {
+            state.nav.baro_mode_sel = (state.nav.baro_mode_sel + 1) % this->baro_labels;
+            update.baro = true;
+            return TouchEvent(TouchEventType::BARO_BUTTON, state.nav.baro_mode_sel);
+        }
         else
         {
             return TouchEvent();
@@ -178,8 +192,10 @@ TouchEvent Display::processTouch()
     }
 }
 
-void Display::clearTouch() {
-    while (!ts.bufferEmpty()) {
+void Display::clearTouch()
+{
+    while (!ts.bufferEmpty())
+    {
         ts.getPoint();
     }
 }
@@ -225,12 +241,11 @@ void Display::printStatic()
     lcd.setCursor(5, 355);
     lcd.print(F("XPDR"));
     lcd.setCursor(165, 355);
-    lcd.print(F("Barometer"));
+    lcd.print(F("")); // Room for Barometer Label
 
     lcd.drawFastHLine(0, 410, 320, HX8357_WHITE);
 
     state.display_static = true;
-
 }
 
 void Display::drawRadioSelectButton(uint8_t active)
@@ -309,6 +324,9 @@ void Display::updateSpeedLabel(uint8_t selection)
     lcd.setTextColor(HX8357_GREEN);
     lcd.setCursor(165, 175);
     lcd.printf("%s ", SPEED_LABEL[selection]);
+
+    update.speed = true;
+    state.nav.speed = 0;
 }
 
 void Display::drawSpeed()
@@ -316,9 +334,11 @@ void Display::drawSpeed()
     GFXcanvas1 canvas(CANVAS_NUM_W, CANVAS_NUM_H);
     canvas.setFont(&B612Mono_Regular18pt7b);
     canvas.setCursor(CANVAS_NUM_UL_X, CANVAS_NUM_UL_Y);
-    if (state.nav.speed_mode_sel == 0) {
-        if (state.nav.speed != 0) {
-            canvas.printf("%5i", (int16_t) state.nav.speed);  // VS
+    if (state.nav.speed_mode_sel == 0)
+    {
+        if (state.nav.speed != 0)
+        {
+            canvas.printf("%5i", (int16_t)state.nav.speed); // VS
             lcd.drawBitmap(DATA_SPEED_POS_X, DATA_SPEED_POS_Y, canvas.getBuffer(), CANVAS_NUM_W, CANVAS_NUM_H, HX8357_CYAN, HX8357_BLACK);
         }
         else
@@ -327,15 +347,18 @@ void Display::drawSpeed()
             lcd.drawBitmap(DATA_SPEED_POS_X, DATA_SPEED_POS_Y, canvas.getBuffer(), CANVAS_NUM_W, CANVAS_NUM_H, HX8357_CYAN, HX8357_BLACK);
         }
     }
-    else if (state.nav.speed_mode_sel == 1) {
-        if (state.nav.speed > 0 and state.nav.speed < 5) {
-            canvas.printf("%4.2f", state.nav.speed);  // Mach
+    else if (state.nav.speed_mode_sel == 1)
+    {
+        if (state.nav.speed > 0 and state.nav.speed < 5)
+        {
+            canvas.printf("%4.2f", state.nav.speed); // Mach
 
             GFXcanvas1 dec_canv = this->trimDecimal(state.nav.speed, 1, 2, CANVAS_NUM_UL_X, CANVAS_NUM_UL_Y, &B612Mono_Regular18pt7b);
-            lcd.drawBitmap(DATA_SPEED_POS_X, DATA_SPEED_POS_Y, dec_canv.getBuffer(), CANVAS_NUM_W, CANVAS_NUM_H, HX8357_CYAN, HX8357_BLACK);        
+            lcd.drawBitmap(DATA_SPEED_POS_X, DATA_SPEED_POS_Y, dec_canv.getBuffer(), CANVAS_NUM_W, CANVAS_NUM_H, HX8357_CYAN, HX8357_BLACK);
         }
-        else if (state.nav.speed >= 5) {
-            canvas.printf("%3i", (int16_t) state.nav.speed);  // IAS
+        else if (state.nav.speed >= 5)
+        {
+            canvas.printf("%3i", (int16_t)state.nav.speed); // IAS
             lcd.drawBitmap(DATA_SPEED_POS_X, DATA_SPEED_POS_Y, canvas.getBuffer(), CANVAS_NUM_W, CANVAS_NUM_H, HX8357_CYAN, HX8357_BLACK);
         }
         else
@@ -401,7 +424,7 @@ void Display::drawCourse()
     canvas.printf("%03i", print_crs);
     canvas.setFont(&B612Mono_Regular24pt8b);
     canvas.printf(deg);
-    lcd.drawBitmap(DATA_CRS_POS_X, DATA_CRS_POS_Y, canvas.getBuffer(), CANVAS_NUM_LARGE_W, CANVAS_NUM_LARGE_H, HX8357_WHITE, HX8357_BLACK);
+    lcd.drawBitmap(DATA_CRS_POS_X, DATA_CRS_POS_Y, canvas.getBuffer(), CANVAS_NUM_LARGE_W, CANVAS_NUM_LARGE_H, HX8357_CYAN, HX8357_BLACK);
     update.crs = false;
 }
 
@@ -432,10 +455,42 @@ void Display::updateBarometer()
     update.baro = true;
 }
 
+void Display::updateBarometerLabel(uint8_t selection)
+{
+    lcd.setFont(&B612_Regular10pt7b);
+    lcd.setTextColor(HX8357_BLACK);
+    lcd.setCursor(165, 355);
+    lcd.printf("%s ", BARO_LABEL[(selection + (this->baro_labels - 1)) % this->baro_labels]);
+
+    lcd.setTextColor(HX8357_GREEN);
+    lcd.setCursor(165, 355);
+    lcd.printf("%s ", BARO_LABEL[selection]);
+
+    update.baro = true;
+    state.nav.baro = 0.0;
+}
+
 void Display::drawBarometer()
 {
-    GFXcanvas1 canv = this->trimDecimal(state.nav.baro, 2, 2, CANVAS_NUM_UL_X, CANVAS_NUM_UL_Y, &B612Mono_Regular18pt7b);
-    lcd.drawBitmap(DATA_BARO_POS_X, DATA_BARO_POS_Y, canv.getBuffer(), CANVAS_NUM_W, CANVAS_NUM_H, HX8357_WHITE, HX8357_BLACK);
+    GFXcanvas1 canvas(CANVAS_NUM_W, CANVAS_NUM_H);
+    canvas.setFont(&B612Mono_Regular18pt7b);
+    canvas.setCursor(CANVAS_NUM_UL_X, CANVAS_NUM_UL_Y);
+
+    if (state.nav.baro < 1.0)
+    {
+        canvas.printf("-----");
+        lcd.drawBitmap(DATA_BARO_POS_X, DATA_BARO_POS_Y, canvas.getBuffer(), CANVAS_NUM_W, CANVAS_NUM_H, HX8357_CYAN, HX8357_BLACK);
+    }
+    else if (state.nav.baro_mode_sel == 1)
+    {
+        canvas = this->trimDecimal(state.nav.baro, 2, 2, CANVAS_NUM_UL_X, CANVAS_NUM_UL_Y, &B612Mono_Regular18pt7b);
+        lcd.drawBitmap(DATA_BARO_POS_X, DATA_BARO_POS_Y, canvas.getBuffer(), CANVAS_NUM_W, CANVAS_NUM_H, HX8357_CYAN, HX8357_BLACK);
+    }
+    else
+    {
+        canvas.printf("%4i", (int16_t)state.nav.baro); // hPa
+        lcd.drawBitmap(DATA_BARO_POS_X, DATA_BARO_POS_Y, canvas.getBuffer(), CANVAS_NUM_W, CANVAS_NUM_H, HX8357_CYAN, HX8357_BLACK);
+    }
     update.baro = false;
 }
 
@@ -463,7 +518,8 @@ void Display::drawRadioActive()
 
     if (state.radio.sel <= 1)
         frac_digits = 2;
-    else if (state.radio.sel == 4) {
+    else if (state.radio.sel == 4)
+    {
         pad_digits = 4;
         frac_digits = 1;
     }
@@ -480,7 +536,8 @@ void Display::drawRadioStandby()
 
     if (state.radio.sel <= 1)
         frac_digits = 2;
-    else if (state.radio.sel == 4) {
+    else if (state.radio.sel == 4)
+    {
         frac_digits = 1;
         pad_digits = 4;
     }

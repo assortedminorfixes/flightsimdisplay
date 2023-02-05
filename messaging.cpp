@@ -50,7 +50,7 @@ void onIdentifyRequest()
         messenger.sendCmdArg(F("{7eb4b953-64c6-4c94-a958-1fac034a0370}")); // Device GUID
         messenger.sendCmdArg(F("SimDisplay"));                             // Device Display Name
         messenger.sendCmdArg(2);                                           // SPAD.NEXT Serial Version
-        messenger.sendCmdArg(F("0.2"));                                    // FW Version
+        messenger.sendCmdArg(F("0.3"));                                    // FW Version
         messenger.sendCmdArg(F("AUTHOR=1683e5ce90820838a39d0d3990f4c266"));
         messenger.sendCmdArg(F("ALLOWLOCAL=2"));
         messenger.sendCmdArg(F("PID=SIMDISPLAY")); // AUTHOR ID
@@ -78,6 +78,8 @@ void onIdentifyRequest()
         messenger.sendCmdArg("OUT_COOLDOWN=" + String(50));
         messenger.sendCmdArg("NO_DISPLAY_CLEAR=" + String(1));
         messenger.sendCmdArg("VPSUPPORT=" + String(1));
+        messenger.sendCmdArg("UI_TYPE=0");
+        messenger.sendCmdArg("DEFAULT_PANEL=Switches");
         messenger.sendCmdEnd();
 
         messenger.sendCmdStart(kRequest);
@@ -88,6 +90,7 @@ void onIdentifyRequest()
         messenger.sendCmdArg(F("SPAD_VIRTUAL_POWER"));
         messenger.sendCmdArg(F("UI_TYPE=3"));
         messenger.sendCmdArg(F("CUSTOM_TYPE=POWER"));
+        messenger.sendCmdArg(F("PANEL=Switches"));
         messenger.sendCmdEnd();
 
         // Expose Inputs
@@ -100,6 +103,7 @@ void onIdentifyRequest()
             messenger.sendCmdArg(inputs[i].type);
             messenger.sendCmdArg(inputs[i].inherit);
             messenger.sendCmdArg(inputs[i].args);
+            messenger.sendCmdArg(F("PANEL=Switches"));
             messenger.sendCmdEnd();
         }
 
@@ -132,22 +136,16 @@ void onIdentifyRequest()
         messenger.sendCmd(kRequest, F("STATESCAN,1"));
 
         // Provides currently selected Radio
-        messenger.sendCmdStart(kInput);
-        messenger.sendCmdArg(iSelRadio);
-        messenger.sendCmdArg(state.radio.sel);
-        messenger.sendCmdEnd();
+        updateRadioSource(state.radio.sel);
 
         // Provides currently selected CRS
-        messenger.sendCmdStart(kInput);
-        messenger.sendCmdArg(iSelCRS);
-        messenger.sendCmdArg(state.nav.crs_sel);
-        messenger.sendCmdEnd();
+        updateCourseSource(state.nav.crs_sel);
 
         // Provides currently selected Speed Mode
-        messenger.sendCmdStart(kInput);
-        messenger.sendCmdArg(iSelAPSpeed);
-        messenger.sendCmdArg(state.nav.speed_mode_sel);
-        messenger.sendCmdEnd();        
+        updateSpeedMode(state.nav.speed_mode_sel);
+
+        // Provides currently selected Baro mode
+        updateBaroMode(state.nav.baro_mode_sel);
 
         messenger.sendCmd(kRequest, F("STATESCAN,2"));
         return;
@@ -363,7 +361,7 @@ void updateCourseSource(uint8_t selection)
 
 void updateSpeedMode(uint8_t selection)
 {
-    // Provides currently selected Course
+    // Updates the speed mode
     messenger.sendCmdStart(kInput);
     messenger.sendCmdArg(iSelAPSpeed);
     messenger.sendCmdArg(selection);
@@ -371,6 +369,20 @@ void updateSpeedMode(uint8_t selection)
 
     if (state.debug) { 
         String msg = F("Speed change: ");
+        disp.printDebug(msg + selection);
+    }
+}
+
+void updateBaroMode(uint8_t selection)
+{
+    // Updates the baro mode
+    messenger.sendCmdStart(kInput);
+    messenger.sendCmdArg(iSelBaro);
+    messenger.sendCmdArg(selection);
+    messenger.sendCmdEnd();
+
+    if (state.debug) { 
+        String msg = F("Baro change: ");
         disp.printDebug(msg + selection);
     }
 }

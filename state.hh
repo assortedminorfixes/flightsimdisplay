@@ -10,6 +10,7 @@ struct NAVData
     uint8_t crs_sel = 0;
     int16_t crs = 0;
     float_t baro = 0.0;
+    uint8_t baro_mode_sel = 0;
 };
 
 struct Freq
