@@ -1,6 +1,8 @@
 #ifndef STATE_H
 #define STATE_H
 
+#define MESSAGING_START_DELAY 1000
+
 struct NAVData
 {
     int32_t alt = 0;
@@ -31,10 +33,17 @@ struct State
   RadioData radio;
   NAVData nav;
   unsigned long last_touch = 0;
+  unsigned long start_time = 0;
   bool power = false;
   bool display_static = false;
+  bool display_off = false;
   bool configured = false;
   bool debug = true;
+
+  bool isReady () {
+    return ((millis() - start_time) > MESSAGING_START_DELAY );
+  }
+
 };
 
 extern struct State state;

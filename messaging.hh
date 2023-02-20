@@ -3,8 +3,7 @@
 
 #include <CmdMessenger.h> // CmdMessenger ... v4.2 was used when making this sketch
 
-#define MESSAGING_DELAY 50
-#define MESSAGING_START_DELAY 1000
+#define MESSAGING_DELAY 10
 
 enum : byte
 {
@@ -62,7 +61,7 @@ const InputOutput inputs[MSG_INPUTS] PROGMEM = {
     {iSelRadio, "S_RADIO", "ROTARY", "SPAD_ENCODER_NOACC", "POS_NAMES=NAV1#NAV2#COM1#COM2#ADF,POS_VALUES=0#1#2#3#4"},
     {iSelCRS, "S_CRS", "ROTARY", "SPAD_ENCODER_NOACC", "POS_NAMES=CRS1#CRS2#GPS,POS_VALUES=0#1#2"},
     {iSelAPSpeed, "S_AP_SPEED", "ROTARY", "SPAD_ENCODER_NOACC", "POS_NAMES=SPD_VERT#SPD_AIR,POS_VALUES=0#1"},
-    {iSelBaro, "S_BARO", "ROTARY", "SPAD_ENCODER_NOACC", "POS_NAMES=BARO_HPA#BARO_INHG,POS_VALUES=0#1"}    
+    {iSelBaro, "S_BARO", "ROTARY", "SPAD_ENCODER_NOACC", "POS_NAMES=BARO_HPA#BARO_INHG,POS_VALUES=0#1"},
 };
 
 #define MSG_OUTPUTS 14

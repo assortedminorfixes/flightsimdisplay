@@ -44,21 +44,9 @@ void loop()
   // Process incoming serial data, and perform callbacks
   messenger.feedinSerialData();
 
-  // If virtual power is on, but the screen layout is not printed,
-  // then print the static layout and update course label and redraw
-  // data values.
-  if (state.configured && state.power && !state.display_static)
-  {
-    disp.printStatic();
-    disp.updateCourseLabel(state.nav.crs_sel);
-    disp.updateSpeedLabel(state.nav.speed_mode_sel);
-    disp.updateBarometerLabel(state.nav.baro_mode_sel);
-    disp.redraw(true);
-  }
-
   // If device is configured, powered and initalized, then
   // process touches and perform updates to display and lights.
-  if (state.configured && state.power && state.display_static)
+  if (state.configured && state.power && state.display_static && state.isReady())
   {
     if ((millis() - state.last_touch) > TS_DOUBLETOUCH_DELAY)
     {
@@ -96,6 +84,26 @@ void loop()
 
     if (state.debug)
       disp.printMem();
+  }
+
+  // If virtual power is on, but the screen layout is not printed,
+  // then print the static layout and update course label and redraw
+  // data values.
+  else if (state.configured && state.power && !state.display_static && state.isReady())
+  {
+    disp.printStatic();
+    disp.updateCourseLabel(state.nav.crs_sel);
+    disp.updateSpeedLabel(state.nav.speed_mode_sel);
+    disp.updateBarometerLabel(state.nav.baro_mode_sel);
+    disp.redraw(true);
+  }
+
+  // If virtual power is off, but the off splash is not printed,
+  // then print the off splash.
+  else if (state.configured && !state.power && !state.display_off && state.isReady()) {
+      disp.printSplash(F("-"));
+      lights.update();
+      state.display_off = true;
   }
 
 } // End of the Main Loop

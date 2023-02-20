@@ -10,7 +10,8 @@ CmdMessenger messenger(Serial);
 template <class T>
 void sendCmdDebugMsg(uint8_t command, uint8_t idx, T arg)
 {
-    if (state.debug) disp.printLastCommand(command, idx, static_cast<int32_t>(arg));
+    if (state.debug && state.isReady())
+        disp.printLastCommand(command, idx, static_cast<int32_t>(arg));
     // messenger.sendCmd(kDebug, arg);
 }
 
@@ -21,7 +22,8 @@ void onUnknownCommand()
 {
     uint8_t cmd = messenger.commandID();
 
-    if (state.debug) {
+    if (state.debug)
+    {
         String msg = F("Unknown command: ");
         disp.printDebug(msg + cmd);
     }
@@ -52,8 +54,9 @@ void onIdentifyRequest()
         messenger.sendCmdArg(2);                                           // SPAD.NEXT Serial Version
         messenger.sendCmdArg(F("0.3"));                                    // FW Version
         messenger.sendCmdArg(F("AUTHOR=1683e5ce90820838a39d0d3990f4c266"));
-        messenger.sendCmdArg(F("ALLOWLOCAL=2"));
-        messenger.sendCmdArg(F("PID=SIMDISPLAY")); // AUTHOR ID
+        messenger.sendCmdArg(F("ALLOWLOCAL=0"));
+        messenger.sendCmdArg(F("PID=SIMDISPLAY")); // Device ID
+        messenger.sendCmdArg(F("VID=LARSLL"));     // Author ID
         messenger.sendCmdEnd();
 
         return;
@@ -74,9 +77,10 @@ void onIdentifyRequest()
         messenger.sendCmdStart(kRequest);
         messenger.sendCmdArg("OPTION");
         messenger.sendCmdArg("ISGENERIC=" + String(1));
-        messenger.sendCmdArg("PAGESUPPORT=" + String(0));
-        messenger.sendCmdArg("OUT_COOLDOWN=" + String(50));
-        messenger.sendCmdArg("NO_DISPLAY_CLEAR=" + String(1));
+        messenger.sendCmdArg("PAGESUPPORT=0");
+        messenger.sendCmdArg("OUT_COOLDOWN=" + String(MESSAGING_DELAY));
+        messenger.sendCmdArg("NO_DISPLAY_CLEAR=1");
+        messenger.sendCmdArg("NO_LED_CLEAR=1");
         messenger.sendCmdArg("VPSUPPORT=" + String(1));
         messenger.sendCmdArg("UI_TYPE=0");
         messenger.sendCmdArg("DEFAULT_PANEL=Switches");
@@ -159,17 +163,25 @@ void onEvent()
     if (strcmp(szRequest, "VIRTUALPOWER") == 0)
     {
         bool flag = messenger.readBoolArg();
-        if (flag != state.power) {
-            state.power = flag;
-
-            if (!state.power) {
-                disp.printSplash(F("-"));
-                lights.update();
-            }
-
-        }
+        state.power = flag;
     }
     else if (strcmp(szRequest, "PROFILECHANGED") == 0)
+    {
+        char *str = messenger.readStringArg();
+        return;
+    }
+    else if (strcmp(szRequest, "PROFILECHANGING") == 0)
+    {
+        char *str = messenger.readStringArg();
+        return;
+    }
+    else if (strcmp(szRequest, "PROVIDER") == 0)
+    {
+        char *str = messenger.readStringArg();
+        uint8_t avail = messenger.readBoolArg();
+        return;
+    }
+    else if (strcmp(szRequest, "AIRCRAFTCHANGED") == 0)
     {
         char *str = messenger.readStringArg();
         return;
@@ -183,9 +195,7 @@ void onEvent()
     }
     else if (strcmp(szRequest, "START") == 0)
     {
-        if (!state.power) {
-            disp.printSplash(F("-"));
-        }
+        state.start_time = millis();
     }
 }
 
@@ -200,60 +210,62 @@ void onData()
     {
         // Clear next two fields for DISPLAY input.
         messenger.readInt16Arg();
-        messenger.readInt16Arg();
     }
 
-    if (dataIdx == dValALT)
+    if (messenger.readInt16Arg() == 2)
     {
-        state.nav.alt = messenger.readInt32Arg();
-        disp.updateAltitude();
-        sendCmdDebugMsg(messenger.commandID(), dataIdx, state.nav.alt);
-    }
-    else if (dataIdx == dValSpeed)
-    {
-        state.nav.speed = messenger.readFloatArg();
-        disp.updateSpeed();
-        sendCmdDebugMsg(messenger.commandID(), dataIdx, state.nav.speed);
-    }
-    else if (dataIdx == dValHDG)
-    {
-        state.nav.hdg = messenger.readInt32Arg();
-        disp.updateHeading();
-        sendCmdDebugMsg(messenger.commandID(), dataIdx, state.nav.hdg);
-    }
-    else if (dataIdx == dValCRS)
-    {
-        state.nav.crs = messenger.readInt32Arg();
-        disp.updateCourse();
-        sendCmdDebugMsg(messenger.commandID(), dataIdx, state.nav.crs);
-    }
-    else if (dataIdx == dValTXPDR)
-    {
-        state.radio.xpdr = messenger.readInt32Arg();
-        disp.updateTransponderCode();
-        sendCmdDebugMsg(messenger.commandID(), dataIdx, state.radio.xpdr);
-    }
-    else if (dataIdx == dValRFREQ_A)
-    {
-        state.radio.freq.active = messenger.readFloatArg();
-        disp.updateRadioFrequencyActive();
-        sendCmdDebugMsg(messenger.commandID(), dataIdx, state.radio.freq.active);
-    }
-    else if (dataIdx == dValRFREQ_S)
-    {
-        state.radio.freq.standby = messenger.readFloatArg();
-        disp.updateRadioFrequencyStandby();
-        sendCmdDebugMsg(messenger.commandID(), dataIdx, state.radio.freq.standby);
-    }
-    else if (dataIdx == dValBARO)
-    {
-        state.nav.baro = messenger.readFloatArg();
-        disp.updateBarometer();
-        sendCmdDebugMsg(messenger.commandID(), dataIdx, state.nav.baro);
-    }
-    else
-    {
-        messenger.sendCmd(kDebug, "Unknown DATA index " + String(dataIdx) + "."); // Writing the Spad Log that we turned the FD Annunciator ON...
+        if (dataIdx == dValALT)
+        {
+            state.nav.alt = messenger.readInt32Arg();
+            disp.updateAltitude();
+            sendCmdDebugMsg(messenger.commandID(), dataIdx, state.nav.alt);
+        }
+        else if (dataIdx == dValSpeed)
+        {
+            state.nav.speed = messenger.readFloatArg();
+            disp.updateSpeed();
+            sendCmdDebugMsg(messenger.commandID(), dataIdx, state.nav.speed);
+        }
+        else if (dataIdx == dValHDG)
+        {
+            state.nav.hdg = messenger.readInt32Arg();
+            disp.updateHeading();
+            sendCmdDebugMsg(messenger.commandID(), dataIdx, state.nav.hdg);
+        }
+        else if (dataIdx == dValCRS)
+        {
+            state.nav.crs = messenger.readInt32Arg();
+            disp.updateCourse();
+            sendCmdDebugMsg(messenger.commandID(), dataIdx, state.nav.crs);
+        }
+        else if (dataIdx == dValTXPDR)
+        {
+            state.radio.xpdr = messenger.readInt32Arg();
+            disp.updateTransponderCode();
+            sendCmdDebugMsg(messenger.commandID(), dataIdx, state.radio.xpdr);
+        }
+        else if (dataIdx == dValRFREQ_A)
+        {
+            state.radio.freq.active = messenger.readFloatArg();
+            disp.updateRadioFrequencyActive();
+            sendCmdDebugMsg(messenger.commandID(), dataIdx, state.radio.freq.active);
+        }
+        else if (dataIdx == dValRFREQ_S)
+        {
+            state.radio.freq.standby = messenger.readFloatArg();
+            disp.updateRadioFrequencyStandby();
+            sendCmdDebugMsg(messenger.commandID(), dataIdx, state.radio.freq.standby);
+        }
+        else if (dataIdx == dValBARO)
+        {
+            state.nav.baro = messenger.readFloatArg();
+            disp.updateBarometer();
+            sendCmdDebugMsg(messenger.commandID(), dataIdx, state.nav.baro);
+        }
+        else
+        {
+            messenger.sendCmd(kDebug, "Unknown DATA index " + String(dataIdx) + "."); // Writing the Spad Log that we turned the FD Annunciator ON...
+        }
     }
 }
 
@@ -267,12 +279,16 @@ void onLED()
 
     LightState ls = LightState();
 
-    if (enable) {
+    if (enable)
+    {
         ls.style = LightStyle::BRIGHT;
 
-        if (color.equals("YELLOW")) {
+        if (color.equals("YELLOW"))
+        {
             ls.color = LightColor::YELLOW;
-        } else if (color.equals("GREEN")) {
+        }
+        else if (color.equals("GREEN"))
+        {
             ls.color = LightColor::GREEN;
         }
     }
@@ -315,7 +331,6 @@ void onLED()
     }
 
     sendCmdDebugMsg(messenger.commandID(), dataIdx, enable);
-
 }
 
 // Define callbacks for the different SPAD command sets
@@ -330,60 +345,40 @@ void attachCommandCallbacks()
     messenger.attach(kLED, onLED);
 }
 
-void updateRadioSource(uint8_t selection)
+void sendInput(uint8_t input, uint8_t selection, String msg)
 {
     // Provides currently selected Radio
     messenger.sendCmdStart(kInput);
-    messenger.sendCmdArg(iSelRadio);
+    messenger.sendCmdArg(input);
     messenger.sendCmdArg(selection);
     messenger.sendCmdEnd();
 
-    if (state.debug)
+    if (state.debug && state.isReady())
     {
-        String msg = F("Radio change: ");
         disp.printDebug(msg + selection + "  ");
     }
 }
 
+void updateRadioSource(uint8_t selection)
+{
+    String msg = F("Radio change: ");
+    sendInput(iSelRadio, selection, msg);
+}
+
 void updateCourseSource(uint8_t selection)
 {
-    // Provides currently selected Course
-    messenger.sendCmdStart(kInput);
-    messenger.sendCmdArg(iSelCRS);
-    messenger.sendCmdArg(selection);
-    messenger.sendCmdEnd();
-
-    if (state.debug)
-    {
-        String msg = F("Course change: ");
-        disp.printDebug(msg + selection);
-    }
+    String msg = F("Course change: ");
+    sendInput(iSelCRS, selection, msg);
 }
 
 void updateSpeedMode(uint8_t selection)
 {
-    // Updates the speed mode
-    messenger.sendCmdStart(kInput);
-    messenger.sendCmdArg(iSelAPSpeed);
-    messenger.sendCmdArg(selection);
-    messenger.sendCmdEnd();
-
-    if (state.debug) { 
-        String msg = F("Speed change: ");
-        disp.printDebug(msg + selection);
-    }
+    String msg = F("Speed change: ");
+    sendInput(iSelAPSpeed, selection, msg);
 }
 
 void updateBaroMode(uint8_t selection)
 {
-    // Updates the baro mode
-    messenger.sendCmdStart(kInput);
-    messenger.sendCmdArg(iSelBaro);
-    messenger.sendCmdArg(selection);
-    messenger.sendCmdEnd();
-
-    if (state.debug) { 
-        String msg = F("Baro change: ");
-        disp.printDebug(msg + selection);
-    }
+    String msg = F("Baro change: ");
+    sendInput(iSelBaro, selection, msg);
 }

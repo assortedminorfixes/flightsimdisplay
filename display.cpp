@@ -246,6 +246,7 @@ void Display::printStatic()
     lcd.drawFastHLine(0, 410, 320, HX8357_WHITE);
 
     state.display_static = true;
+    state.display_off = false;
 }
 
 void Display::drawRadioSelectButton(uint8_t active)
