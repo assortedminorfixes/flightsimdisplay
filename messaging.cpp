@@ -4,11 +4,10 @@
 #include "lights.hh"
 #include "messaging.hh"
 
-//// ------   Spad Coms Section ------ ///////
-CmdMessenger messenger(Serial);
+constexpr CommsController::InputOutput CommsController::in_outs[];
 
 template <class T>
-void sendCmdDebugMsg(uint8_t command, uint8_t idx, T arg)
+void CommsController::sendCmdDebugMsg(uint8_t command, uint8_t idx, T arg)
 {
     if (state.debug && state.isReady())
         disp.printLastCommand(command, idx, static_cast<int32_t>(arg));
@@ -18,7 +17,7 @@ void sendCmdDebugMsg(uint8_t command, uint8_t idx, T arg)
 // ------------------  C A L L B A C K S -----------------------
 
 // Called when a received command has no attached function
-void onUnknownCommand()
+void CommsController::onUnknownCommand()
 {
     uint8_t cmd = messenger.commandID();
 
@@ -33,7 +32,7 @@ void onUnknownCommand()
 
 // Callback function to respond to indentify request. This is part of the
 // Auto connection handshake.
-void onIdentifyRequest()
+void CommsController::onIdentifyRequest()
 {
     char *szRequest = messenger.readStringArg();
 
@@ -134,7 +133,7 @@ void onIdentifyRequest()
     }
 }
 
-void onEvent()
+void CommsController::onEvent()
 {
     char *szRequest = messenger.readStringArg();
 
@@ -177,7 +176,7 @@ void onEvent()
     }
 }
 
-void onData()
+void CommsController::onData()
 {
     uint8_t dataIdx = messenger.readInt16Arg();
     bool modeSwitch = false;
@@ -247,7 +246,7 @@ void onData()
     }
 }
 
-void onLED()
+void CommsController::onLED()
 {
 
     uint8_t dataIdx = messenger.readInt16Arg();
@@ -307,7 +306,7 @@ void onLED()
 }
 
 // Define callbacks for the different SPAD command sets
-void attachCommandCallbacks()
+void CommsController::attachCommandCallbacks()
 {
     // Attach callback methods
     messenger.attach(onUnknownCommand);
@@ -318,7 +317,7 @@ void attachCommandCallbacks()
     messenger.attach(kLED, onLED);
 }
 
-void sendInput(uint8_t input, uint8_t selection, String msg)
+void CommsController::sendInput(uint8_t input, uint8_t selection, String msg)
 {
     // Provides currently selected Radio
     messenger.sendCmdStart(kInput);
@@ -332,28 +331,33 @@ void sendInput(uint8_t input, uint8_t selection, String msg)
     }
 }
 
-void updateRadioSource(uint8_t selection)
+void CommsController::updateRadioSource(uint8_t selection)
 {
     String msg = F("Radio change: ");
     sendInput(iSelRadio, selection, msg);
 }
 
-void updateCourseSource(uint8_t selection)
+void CommsController::updateCourseSource(uint8_t selection)
 {
     String msg = F("Course change: ");
     sendInput(iSelCRS, selection, msg);
 }
 
-void updateSpeedMode(uint8_t selection)
+void CommsController::updateSpeedMode(uint8_t selection)
 {
     String msg = F("Speed change: ");
     state.nav.speed = 0.0;
     sendInput(iSelAPSpeed, selection, msg);
 }
 
-void updateBaroMode(uint8_t selection)
+void CommsController::updateBaroMode(uint8_t selection)
 {
     String msg = F("Baro change: ");
     state.nav.baro = 0.0;
     sendInput(iSelBaro, selection, msg);
+}
+
+void CommsController::processInputData()
+{
+    messenger.feedinSerialData();
 }

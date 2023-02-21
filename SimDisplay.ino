@@ -19,7 +19,7 @@
 
 Display disp{};
 LightController lights{};
-
+CommsController comms{};
 struct State state;
 
 void setup()
@@ -32,7 +32,7 @@ void setup()
   disp.initDisplay();
 
   // Attach my application's user-defined callback methods
-  attachCommandCallbacks();
+  comms.attachCommandCallbacks();
 
   // Initialize Lights
   lights.initLights();
@@ -42,7 +42,7 @@ void setup()
 void loop()
 {
   // Process incoming serial data, and perform callbacks
-  messenger.feedinSerialData();
+  comms.processInputData();
 
   // If device is configured, powered and initalized, then
   // process touches and perform updates to display and lights.
@@ -56,18 +56,18 @@ void loop()
         switch (te.event)
         {
         case TouchEventType::NAV_BUTTON:
-          updateRadioSource(te.value);
+          comms.updateRadioSource(te.value);
           break;
         case TouchEventType::CRS_BUTTON:
-          updateCourseSource(te.value);
+          comms.updateCourseSource(te.value);
           disp.updateCourseLabel(te.value);
           break;
         case TouchEventType::SPEED_BUTTON:
-          updateSpeedMode(te.value);
+          comms.updateSpeedMode(te.value);
           disp.updateSpeedLabel(te.value);
           break;
         case TouchEventType::BARO_BUTTON:
-          updateBaroMode(te.value);
+          comms.updateBaroMode(te.value);
           disp.updateBarometerLabel(te.value);
           break;
         }
