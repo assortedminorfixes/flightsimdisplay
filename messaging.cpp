@@ -76,51 +76,26 @@ void onIdentifyRequest()
 
         messenger.sendCmdStart(kRequest);
         messenger.sendCmdArg("OPTION");
-        messenger.sendCmdArg("ISGENERIC=" + String(1));
+        messenger.sendCmdArg("ISGENERIC=1");
         messenger.sendCmdArg("PAGESUPPORT=0");
         messenger.sendCmdArg("OUT_COOLDOWN=" + String(MESSAGING_DELAY));
         messenger.sendCmdArg("NO_DISPLAY_CLEAR=1");
         messenger.sendCmdArg("NO_LED_CLEAR=1");
-        messenger.sendCmdArg("VPSUPPORT=" + String(1));
+        messenger.sendCmdArg("VPSUPPORT=1");
         messenger.sendCmdArg("UI_TYPE=0");
         messenger.sendCmdArg("DEFAULT_PANEL=Switches");
         messenger.sendCmdEnd();
 
-        messenger.sendCmdStart(kRequest);
-        messenger.sendCmdArg(F("INPUT"));
-        messenger.sendCmdArg(F("0"));
-        messenger.sendCmdArg(F("CONFIGURE_PANEL_STATUS"));
-        messenger.sendCmdArg(F("SYSTEM"));
-        messenger.sendCmdArg(F("SPAD_VIRTUAL_POWER"));
-        messenger.sendCmdArg(F("UI_TYPE=3"));
-        messenger.sendCmdArg(F("CUSTOM_TYPE=POWER"));
-        messenger.sendCmdArg(F("PANEL=Switches"));
-        messenger.sendCmdEnd();
-
-        // Expose Inputs
-        for (int i = 0; i < MSG_INPUTS; i++)
+        // Expose Inputs and Outputs
+        for (int i = 0; i < MSG_INOUTS; i++)
         {
             messenger.sendCmdStart(kRequest);
-            messenger.sendCmdArg(F("INPUT"));
-            messenger.sendCmdArg(inputs[i].idx);
-            messenger.sendCmdArg(inputs[i].name);
-            messenger.sendCmdArg(inputs[i].type);
-            messenger.sendCmdArg(inputs[i].inherit);
-            messenger.sendCmdArg(inputs[i].args);
-            messenger.sendCmdArg(F("PANEL=Switches"));
-            messenger.sendCmdEnd();
-        }
-
-        // Expose Outputs
-        for (int i = 0; i < MSG_OUTPUTS; i++)
-        {
-            messenger.sendCmdStart(kRequest);
-            messenger.sendCmdArg(F("OUTPUT"));
-            messenger.sendCmdArg(outputs[i].idx);
-            messenger.sendCmdArg(outputs[i].name);
-            messenger.sendCmdArg(outputs[i].type);
-            messenger.sendCmdArg(outputs[i].inherit);
-            messenger.sendCmdArg(outputs[i].args);
+            messenger.sendCmdArg(in_outs[i].io);
+            messenger.sendCmdArg(in_outs[i].idx);
+            messenger.sendCmdArg(in_outs[i].name);
+            messenger.sendCmdArg(in_outs[i].type);
+            messenger.sendCmdArg(in_outs[i].inherit);
+            messenger.sendCmdArg(in_outs[i].args);
             messenger.sendCmdEnd();
         }
 
@@ -138,6 +113,9 @@ void onIdentifyRequest()
         char *str = messenger.readStringArg();
 
         messenger.sendCmd(kRequest, F("STATESCAN,1"));
+
+        // Send Virtual Power off.
+        sendInput(iPower, 0, F("Power change: "));
 
         // Provides currently selected Radio
         updateRadioSource(state.radio.sel);
@@ -293,41 +271,36 @@ void onLED()
         }
     }
 
-    if (dataIdx == dModeAP)
+    switch (dataIdx)
     {
+    case dModeAP:
         lights.setAutopilot(ls);
-    }
-    else if (dataIdx == dModeFD)
-    {
+        break;
+    case dModeFD:
         messenger.sendCmd(kDebug, F("FD Mode not enabled")); // Writing the Spad Log that we turned the FD Annunciator ON...
-    }
-    else if (dataIdx == dModeHDG)
-    {
+        break;
+    case dModeHDG:
         lights.setHeading(ls);
-    }
-    else if (dataIdx == dModeNAV)
-    {
+        break;
+    case dModeNAV:
         lights.setNavigation(ls);
-    }
-    else if (dataIdx == dModeALT)
-    {
+        break;
+    case dModeALT:
         lights.setAltitude(ls);
-    }
-    else if (dataIdx == dModeIAS)
-    {
+        break;
+    case dModeIAS:
         messenger.sendCmd(kDebug, F("IAS Mode not enabled")); // Writing the Spad Log that we turned the FD Annunciator ON...
-    }
-    else if (dataIdx == dModeVS)
-    {
+        break;
+    case dModeVS:
         lights.setVerticalSpeed(ls);
-    }
-    else if (dataIdx == dModeAPR)
-    {
+        break;
+    case dModeAPR:
         lights.setApproach(ls);
-    }
-    else if (dataIdx == dModeREV)
-    {
+        break;
+    case dModeREV:
         messenger.sendCmd(kDebug, F("REV Mode not enabled")); // Writing the Spad Log that we turned the FD Annunciator ON...
+    default:
+        break;
     }
 
     sendCmdDebugMsg(messenger.commandID(), dataIdx, enable);
@@ -374,11 +347,13 @@ void updateCourseSource(uint8_t selection)
 void updateSpeedMode(uint8_t selection)
 {
     String msg = F("Speed change: ");
+    state.nav.speed = 0.0;
     sendInput(iSelAPSpeed, selection, msg);
 }
 
 void updateBaroMode(uint8_t selection)
 {
     String msg = F("Baro change: ");
+    state.nav.baro = 0.0;
     sendInput(iSelBaro, selection, msg);
 }

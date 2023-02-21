@@ -327,7 +327,6 @@ void Display::updateSpeedLabel(uint8_t selection)
     lcd.printf("%s ", SPEED_LABEL[selection]);
 
     update.speed = true;
-    state.nav.speed = 0;
 }
 
 void Display::drawSpeed()
@@ -468,7 +467,7 @@ void Display::updateBarometerLabel(uint8_t selection)
     lcd.printf("%s ", BARO_LABEL[selection]);
 
     update.baro = true;
-    state.nav.baro = 0.0;
+
 }
 
 void Display::drawBarometer()

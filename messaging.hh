@@ -30,7 +30,7 @@ enum : byte
     dModeAPR = 27,    //
     dModeREV = 28,    //
     dValALT = 29,     //
-    dValSpeed = 30,      //
+    dValSpeed = 30,   //
     dValHDG = 32,     //
     dValCRS = 33,     //
     dValTXPDR = 34,   //
@@ -41,6 +41,7 @@ enum : byte
 
 enum : byte
 {
+    iPower = 0,
     iSelRadio = 1,
     iSelCRS = 2,
     iSelAPSpeed = 3,
@@ -49,6 +50,7 @@ enum : byte
 
 struct InputOutput
 {
+    const char *io;
     uint8_t idx;
     const char *name;
     const char *type;
@@ -56,36 +58,33 @@ struct InputOutput
     const char *args;
 };
 
-#define MSG_INPUTS 4
-const InputOutput inputs[MSG_INPUTS] PROGMEM = {
-    {iSelRadio, "S_RADIO", "ROTARY", "SPAD_ENCODER_NOACC", "POS_NAMES=NAV1#NAV2#COM1#COM2#ADF,POS_VALUES=0#1#2#3#4"},
-    {iSelCRS, "S_CRS", "ROTARY", "SPAD_ENCODER_NOACC", "POS_NAMES=CRS1#CRS2#GPS,POS_VALUES=0#1#2"},
-    {iSelAPSpeed, "S_AP_SPEED", "ROTARY", "SPAD_ENCODER_NOACC", "POS_NAMES=SPD_VERT#SPD_AIR,POS_VALUES=0#1"},
-    {iSelBaro, "S_BARO", "ROTARY", "SPAD_ENCODER_NOACC", "POS_NAMES=BARO_HPA#BARO_INHG,POS_VALUES=0#1"},
-};
-
-#define MSG_OUTPUTS 14
-const InputOutput outputs[MSG_OUTPUTS] PROGMEM = {
-    {dModeAP, "L_AP_MASTER", "LED", "SPAD_LED_3COL", "UI_FACE=1,PANEL=LED"},
-    {dModeNAV, "L_AP_NAV", "LED", "SPAD_LED_3COL", "UI_FACE=1,PANEL=LED"},
-    {dModeHDG, "L_AP_HDG", "LED", "SPAD_LED_3COL", "UI_FACE=1,PANEL=LED"},
-    {dModeALT, "L_AP_ALT", "LED", "SPAD_LED_3COL", "UI_FACE=1,PANEL=LED"},
-    {dModeVS, "L_AP_VS", "LED", "SPAD_LED_3COL", "UI_FACE=1,PANEL=LED"},
-    {dModeAPR, "L_AP_APR", "LED", "SPAD_LED_3COL", "UI_FACE=1,PANEL=LED"},
-    {dValHDG, "D_AP_HDG", "DISPLAY", "SPAD_DISPLAY", "LENGTH=3,HEIGHT=40,WIDTH=100,PANEL=Display"},
-    {dValCRS, "D_AP_CRS", "DISPLAY", "SPAD_DISPLAY", "LENGTH=3,HEIGHT=40,WIDTH=100,PANEL=Display"},
-    {dValALT, "D_AP_ALT", "DISPLAY", "SPAD_DISPLAY", "LENGTH=5,HEIGHT=40,WIDTH=100,PANEL=Display"},
-    {dValSpeed, "D_AP_SPEED", "DISPLAY", "SPAD_DISPLAY", "LENGTH=5,HEIGHT=40,WIDTH=100,PANEL=Display"},
-    {dValTXPDR, "D_XPDR", "DISPLAY", "SPAD_DISPLAY", "LENGTH=4,HEIGHT=40,WIDTH=100,PANEL=Display"},
-    {dValBARO, "D_BARO", "DISPLAY", "SPAD_DISPLAY", "LENGTH=5,HEIGHT=40,WIDTH=100,PANEL=Display"},
-    {dValRFREQ_A, "D_RADIO_ACTIVE_FREQ", "DISPLAY", "SPAD_DISPLAY", "LENGTH=7,HEIGHT=40,WIDTH=150,PANEL=Display"},
-    {dValRFREQ_S, "D_RADIO_STANDBY_FREQ", "DISPLAY", "SPAD_DISPLAY", "LENGTH=7,HEIGHT=40,WIDTH=150,PANEL=Display"}
-};
+#define MSG_INOUTS 19
+const InputOutput in_outs[MSG_INOUTS] PROGMEM = {
+    {"INPUT", iPower, "CONFIGURE_PANEL_STATUS", "SYSTEM", "SPAD_VIRTUAL_POWER", "UI_TYPE=3,CUSTOM_TYPE=POWER,PANEL=Switches"},
+    {"INPUT", iSelRadio, "S_RADIO", "ROTARY", "SPAD_ENCODER_NOACC", "POS_NAMES=NAV1#NAV2#COM1#COM2#ADF,POS_VALUES=0#1#2#3#4,PANEL=Switches"},
+    {"INPUT", iSelCRS, "S_CRS", "ROTARY", "SPAD_ENCODER_NOACC", "POS_NAMES=CRS1#CRS2#GPS,POS_VALUES=0#1#2,PANEL=Switches"},
+    {"INPUT", iSelAPSpeed, "S_AP_SPEED", "ROTARY", "SPAD_ENCODER_NOACC", "POS_NAMES=SPD_VERT#SPD_AIR,POS_VALUES=0#1,PANEL=Switches"},
+    {"INPUT", iSelBaro, "S_BARO", "ROTARY", "SPAD_ENCODER_NOACC", "POS_NAMES=BARO_HPA#BARO_INHG,POS_VALUES=0#1,PANEL=Switches"},
+    {"OUTPUT", dModeAP, "L_AP_MASTER", "LED", "SPAD_LED_3COL", "UI_FACE=1,PANEL=LED"},
+    {"OUTPUT", dModeNAV, "L_AP_NAV", "LED", "SPAD_LED_3COL", "UI_FACE=1,PANEL=LED"},
+    {"OUTPUT", dModeHDG, "L_AP_HDG", "LED", "SPAD_LED_3COL", "UI_FACE=1,PANEL=LED"},
+    {"OUTPUT", dModeALT, "L_AP_ALT", "LED", "SPAD_LED_3COL", "UI_FACE=1,PANEL=LED"},
+    {"OUTPUT", dModeVS, "L_AP_VS", "LED", "SPAD_LED_3COL", "UI_FACE=1,PANEL=LED"},
+    {"OUTPUT", dModeAPR, "L_AP_APR", "LED", "SPAD_LED_3COL", "UI_FACE=1,PANEL=LED"},
+    {"OUTPUT", dValHDG, "D_AP_HDG", "DISPLAY", "SPAD_DISPLAY", "LENGTH=3,HEIGHT=40,WIDTH=100,PANEL=Display"},
+    {"OUTPUT", dValCRS, "D_AP_CRS", "DISPLAY", "SPAD_DISPLAY", "LENGTH=3,HEIGHT=40,WIDTH=100,PANEL=Display"},
+    {"OUTPUT", dValALT, "D_AP_ALT", "DISPLAY", "SPAD_DISPLAY", "LENGTH=5,HEIGHT=40,WIDTH=100,PANEL=Display"},
+    {"OUTPUT", dValSpeed, "D_AP_SPEED", "DISPLAY", "SPAD_DISPLAY", "LENGTH=5,HEIGHT=40,WIDTH=100,PANEL=Display"},
+    {"OUTPUT", dValTXPDR, "D_XPDR", "DISPLAY", "SPAD_DISPLAY", "LENGTH=4,HEIGHT=40,WIDTH=100,PANEL=Display"},
+    {"OUTPUT", dValBARO, "D_BARO", "DISPLAY", "SPAD_DISPLAY", "LENGTH=5,HEIGHT=40,WIDTH=100,PANEL=Display"},
+    {"OUTPUT", dValRFREQ_A, "D_RADIO_ACTIVE_FREQ", "DISPLAY", "SPAD_DISPLAY", "LENGTH=7,HEIGHT=40,WIDTH=150,PANEL=Display"},
+    {"OUTPUT", dValRFREQ_S, "D_RADIO_STANDBY_FREQ", "DISPLAY", "SPAD_DISPLAY", "LENGTH=7,HEIGHT=40,WIDTH=150,PANEL=Display"}};
 
 void attachCommandCallbacks();
 void updateRadioSource(uint8_t selection);
 void updateCourseSource(uint8_t selection);
 void updateSpeedMode(uint8_t selection);
 void updateBaroMode(uint8_t selection);
+void sendInput(uint8_t input, uint8_t selection, String msg);
 extern CmdMessenger messenger;
 #endif
