@@ -145,34 +145,41 @@ void CommsController::onEvent()
     else if (strcmp(szRequest, "PROFILECHANGED") == 0)
     {
         char *str = messenger.readStringArg();
-        return;
     }
     else if (strcmp(szRequest, "PROFILECHANGING") == 0)
     {
         char *str = messenger.readStringArg();
-        return;
     }
     else if (strcmp(szRequest, "PROVIDER") == 0)
     {
         char *str = messenger.readStringArg();
         uint8_t avail = messenger.readBoolArg();
-        return;
     }
     else if (strcmp(szRequest, "AIRCRAFTCHANGED") == 0)
     {
         char *str = messenger.readStringArg();
-        return;
     }
     else if (strcmp(szRequest, "PAGE") == 0)
     {
         char *uid = messenger.readStringArg();
         uint8_t pagenum = messenger.readInt16Arg();
         char *pagename = messenger.readStringArg();
-        return;
     }
     else if (strcmp(szRequest, "START") == 0)
     {
         state.start_time = millis();
+    }
+    else if (strcmp(szRequest, "GAMESTATE") == 0)
+    {
+        state.start_time = millis();
+        uint8_t gamestate = messenger.readInt16Arg();
+        char *gamestatestr = messenger.readStringArg();
+    }
+
+    // Ensure everything has been read in.
+    while (messenger.available())
+    {
+        char *arg = messenger.readStringArg();
     }
 }
 
@@ -243,6 +250,12 @@ void CommsController::onData()
         {
             messenger.sendCmd(kDebug, "Unknown DATA index " + String(dataIdx) + "."); // Writing the Spad Log that we turned the FD Annunciator ON...
         }
+
+        // Ensure everything has been read in.
+        while (messenger.available())
+        {
+            char *arg = messenger.readStringArg();
+        }
     }
 }
 
@@ -300,6 +313,12 @@ void CommsController::onLED()
         messenger.sendCmd(kDebug, F("REV Mode not enabled")); // Writing the Spad Log that we turned the FD Annunciator ON...
     default:
         break;
+    }
+
+    // Ensure everything has been read in.
+    while (messenger.available())
+    {
+        char *arg = messenger.readStringArg();
     }
 
     sendCmdDebugMsg(messenger.commandID(), dataIdx, enable);
