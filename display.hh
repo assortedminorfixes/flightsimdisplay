@@ -33,11 +33,15 @@ private:
    const char *RADIO_BUTTON_LABEL[5] = {"NAV1", "NAV2", "COM1", "COM2",
                                         "ADF"};
    const char *CRS_LABEL[3] = {"OBS 1", "OBS 2", "GPS DTK"};
-   const char *SPEED_LABEL[2] = {"VS", "Speed"};
+   const char *SPEED_LABEL[2] = {"V/S", "Speed"};
+   const char *HEADING_LABEL[1] = {"Heading"};
    const char *BARO_LABEL[2] = {"Baro hPa", "Baro inHg"};
 
    GFXcanvas1 cCenter;
-   const char deg[1] = {0xB0};
+   const char SYM_DEG[1] = {0xB0};
+   const char SYM_DOT[1] = {0x2E};
+   String dbg_str;
+
    const uint8_t crs_labels = sizeof(CRS_LABEL) / sizeof(CRS_LABEL[0]);
    const uint8_t speed_labels = sizeof(SPEED_LABEL) / sizeof(SPEED_LABEL[0]);
    const uint8_t baro_labels = sizeof(BARO_LABEL) / sizeof(BARO_LABEL[0]);
@@ -46,7 +50,9 @@ private:
    {
       bool alt = false;
       bool speed = false;
+      bool speed_lbl = false;
       bool hdg = false;
+      bool hdg_lbl = false;
       bool crs = false;
       bool radio_active = false;
       bool radio_standby = false;
@@ -57,9 +63,14 @@ private:
 
    struct Update update;
 
+   void drawLabel(uint16_t x, uint16_t y, String label);
+   void drawLabel(uint16_t x, uint16_t y, const char* label);
+
    void drawAltitude();
    void drawSpeed();
+   void drawSpeedLabel();
    void drawHeading();
+   void drawHeadingLabel();
    void drawCourse();
    void drawTransponderCode();
    void drawRadioActive();
@@ -69,7 +80,7 @@ private:
 
    Adafruit_HX8357 lcd;
    Adafruit_STMPE610 ts;
-   GFXcanvas1 trimDecimal(float_t num, uint8_t padding, uint8_t decimals, int x, int y, const GFXfont *font);
+   void trimDecimal(float_t num, uint8_t padding, uint8_t decimals, bool dashes, bool force_sign, int x, int y, GFXcanvas1 *canvas, const GFXfont *font);
    String getStringValue(String data, char separator, int index);
 
 public:
@@ -79,6 +90,7 @@ public:
    void printStatic();
    void printSplash(String str);
    void printLastCommand(uint8_t command, uint8_t index, int32_t value);
+   void printLastCommand(uint8_t command, uint8_t index, const String value);
    void printDebug(String msg);
    void printMem();
 
@@ -89,8 +101,9 @@ public:
 
    void updateAltitude();
    void updateSpeed();
-   void updateSpeedLabel(uint8_t selection);
+   void updateSpeedLabel();
    void updateHeading();
+   void updateHeadingLabel();
    void updateCourse();
    void updateCourseLabel(uint8_t selection);
    void updateTransponderCode();

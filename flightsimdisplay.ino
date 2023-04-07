@@ -64,7 +64,7 @@ void loop()
           break;
         case TouchEventType::SPEED_BUTTON:
           comms.updateSpeedMode(te.value);
-          disp.updateSpeedLabel(te.value);
+          disp.updateSpeedLabel();
           break;
         case TouchEventType::BARO_BUTTON:
           comms.updateBaroMode(te.value);
@@ -93,8 +93,9 @@ void loop()
   {
     disp.printStatic();
     disp.updateCourseLabel(state.nav.crs_sel);
-    disp.updateSpeedLabel(state.nav.speed_mode_sel);
+    disp.updateSpeedLabel();
     disp.updateBarometerLabel(state.nav.baro_mode_sel);
+    disp.updateHeadingLabel();
     disp.redraw(true);
   }
 
