@@ -7,6 +7,32 @@
 #include "TouchScreen.h"
 #include "Adafruit_STMPE610.h"
 
+#include "fonts/b612reg10pt.h"
+#include "fonts/b612bold7pt.h"
+#include "fonts/b612bold16pt.h"
+#include "fonts/b612monoreg18pt.h"
+#include "fonts/b612monoreg18pt-deg.h"
+#include "fonts/b612monoreg18pt-dot.h"
+#include "fonts/b612monoreg18pt-dash.h"
+#include "fonts/b612monoreg24pt.h"
+#include "fonts/b612monoreg24pt-deg.h"
+#include "fonts/b612monoreg24pt-dot.h"
+#include "fonts/b612monoreg24pt-dash.h"
+
+struct Fonts
+{
+   const GFXfont *normal;
+   const GFXfont *dot;
+   const GFXfont *dash;
+   const GFXfont *deg;
+};
+
+const Fonts font_mono_val_s = {&B612Mono_Regular18pt7b, &B612Mono_Regular18ptDot, &B612Mono_Regular18ptDash, &B612Mono_Regular18ptDeg};
+const Fonts font_mono_val_l = {&B612Mono_Regular24pt7b, &B612Mono_Regular24ptDot, &B612Mono_Regular24ptDash, &B612Mono_Regular24ptDeg};
+const Fonts font_var_title  = {&B612_Bold16pt7b, nullptr, nullptr, nullptr};
+const Fonts font_var_lbl    = {&B612_Regular10pt7b, nullptr, nullptr, nullptr};
+const Fonts font_var_lbl_b  = {&B612_Bold7pt7b, nullptr, nullptr, nullptr};
+
 enum TouchEventType
 {
    NO_TOUCH,
@@ -37,9 +63,10 @@ private:
    const char *HEADING_LABEL[1] = {"Heading"};
    const char *BARO_LABEL[2] = {"Baro hPa", "Baro inHg"};
 
-   GFXcanvas1 cCenter;
    const char SYM_DEG[1] = {0xB0};
    const char SYM_DOT[1] = {0x2E};
+
+   GFXcanvas1 cCenter;
    String dbg_str;
 
    const uint8_t crs_labels = sizeof(CRS_LABEL) / sizeof(CRS_LABEL[0]);
@@ -64,7 +91,7 @@ private:
    struct Update update;
 
    void drawLabel(uint16_t x, uint16_t y, String label);
-   void drawLabel(uint16_t x, uint16_t y, const char* label);
+   void drawLabel(uint16_t x, uint16_t y, const char *label);
 
    void drawAltitude();
    void drawSpeed();
@@ -80,7 +107,8 @@ private:
 
    Adafruit_HX8357 lcd;
    Adafruit_STMPE610 ts;
-   void trimDecimal(float_t num, uint8_t padding, uint8_t decimals, bool dashes, bool force_sign, int x, int y, GFXcanvas1 *canvas, const GFXfont *font);
+   void trimDecimal(float_t num, uint8_t padding, uint8_t decimals, bool dashes, bool force_sign, int x, int y, GFXcanvas1 *canvas, const Fonts *font);
+   void printDash(uint8_t num, GFXcanvas1 *canvas, const Fonts *font);
    String getStringValue(String data, char separator, int index);
 
 public:
