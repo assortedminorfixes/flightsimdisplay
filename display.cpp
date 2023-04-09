@@ -431,6 +431,7 @@ void Display::drawHeading()
         print_hdg = state.nav.hdg.value;
 
     GFXcanvas1 canvas(CANVAS_NUM_LARGE_W, CANVAS_NUM_LARGE_H);
+    canvas.setFont(font_mono_val_l.normal);
     canvas.setCursor(5, 45);
     if (state.nav.hdg.dashes == true || state.nav.hdg.value < 0)
     {
@@ -438,7 +439,6 @@ void Display::drawHeading()
     }
     else
     {
-        canvas.setFont(font_mono_val_l.normal);
         canvas.printf("%03i", print_hdg);
 
         if (state.nav.hdg.dot == false)
