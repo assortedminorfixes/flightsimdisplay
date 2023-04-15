@@ -101,10 +101,11 @@ void loop()
 
   // If virtual power is off, but the off splash is not printed,
   // then print the off splash.
-  else if (state.configured && !state.power && !state.display_off && state.isReady()) {
-      disp.printSplash(F("-"));
-      lights.update();
-      state.display_off = true;
+  else if (state.configured && !state.power && !state.display_off && state.isReady())
+  {
+    disp.printSplash(F("-"));
+    lights.update();
+    state.display_off = true;
   }
 
 } // End of the Main Loop
