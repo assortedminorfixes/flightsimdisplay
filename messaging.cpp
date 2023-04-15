@@ -1,5 +1,4 @@
 #include "Arduino.h"
-#include "state.hh"
 #include "display.hh"
 #include "lights.hh"
 #include "messaging.hh"
@@ -11,7 +10,29 @@ void CommsController::sendCmdDebugMsg(uint8_t command, uint8_t idx, T arg)
 {
     if (state.debug && state.isReady())
         disp.printLastCommand(command, idx, static_cast<int32_t>(arg));
-    // messenger.sendCmd(kDebug, arg);
+
+    if (state.serial_debug)        
+        messenger.sendCmd(kDebug, arg);
+}
+
+template <>
+void CommsController::sendCmdDebugMsg<String>(uint8_t command, uint8_t idx, const String arg)
+{
+    if (state.debug && state.isReady()) 
+        disp.printLastCommand(command, idx, arg);
+
+    if (state.serial_debug)
+        messenger.sendCmd(kDebug, arg);
+}
+
+template <>
+void CommsController::sendCmdDebugMsg<DisplayField>(uint8_t command, uint8_t idx, DisplayField arg)
+{
+    if (state.debug && state.isReady())
+        disp.printLastCommand(command, idx, arg.to_string().c_str());
+
+    if (state.serial_debug)
+        messenger.sendCmd(kDebug, arg.to_string());
 }
 
 // ------------------  C A L L B A C K S -----------------------
@@ -138,119 +159,112 @@ void CommsController::onEvent()
     char *szRequest = messenger.readStringArg();
 
     if (strcmp(szRequest, "VIRTUALPOWER") == 0)
-    {
-        bool flag = messenger.readBoolArg();
-        state.power = flag;
-    }
+        state.power = messenger.readBoolArg();
     else if (strcmp(szRequest, "PROFILECHANGED") == 0)
-    {
         char *str = messenger.readStringArg();
-    }
     else if (strcmp(szRequest, "PROFILECHANGING") == 0)
-    {
         char *str = messenger.readStringArg();
-    }
     else if (strcmp(szRequest, "PROVIDER") == 0)
-    {
         char *str = messenger.readStringArg();
-        uint8_t avail = messenger.readBoolArg();
-    }
     else if (strcmp(szRequest, "AIRCRAFTCHANGED") == 0)
-    {
         char *str = messenger.readStringArg();
-    }
     else if (strcmp(szRequest, "PAGE") == 0)
-    {
-        char *uid = messenger.readStringArg();
-        uint8_t pagenum = messenger.readInt16Arg();
-        char *pagename = messenger.readStringArg();
-    }
+        char *str = messenger.readStringArg();
     else if (strcmp(szRequest, "START") == 0)
-    {
         state.start_time = millis();
-    }
     else if (strcmp(szRequest, "GAMESTATE") == 0)
-    {
-        state.start_time = millis();
-        uint8_t gamestate = messenger.readInt16Arg();
-        char *gamestatestr = messenger.readStringArg();
-    }
-
+        char *str = messenger.readStringArg();
+        
     // Ensure everything has been read in.
     while (messenger.available())
-    {
         char *arg = messenger.readStringArg();
-    }
+
+}
+
+void CommsController::updateDisplayField(DisplayField* field, uint8_t row) {
+    switch(row){
+        case 0:
+            field->value = messenger.readFloatArg();
+            break;
+        case 1:
+            field->dashes = messenger.readBoolArg();
+            break;
+        case 2:
+            field->dot = messenger.readBoolArg();
+            break;
+        case 3:
+            String lbl(messenger.readStringArg());
+            lbl.trim();
+            field->label = lbl;
+            break;
+    }   
 }
 
 void CommsController::onData()
 {
-    uint8_t dataIdx = messenger.readInt16Arg();
-    bool modeSwitch = false;
-    int32_t intVal = 0;
-    float_t floatVal = 0.0;
-
     if (messenger.commandID() == kDisplay)
     {
         // Clear next two fields for DISPLAY input.
-        messenger.readInt16Arg();
-    }
+        uint8_t dataIdx = messenger.readInt16Arg();
+        uint8_t row = messenger.readInt16Arg();
 
-    if (messenger.readInt16Arg() == 2)
-    {
-        if (dataIdx == dValALT)
+        if (messenger.readInt16Arg() == 2)
         {
-            state.nav.alt = messenger.readInt32Arg();
-            disp.updateAltitude();
-            sendCmdDebugMsg(messenger.commandID(), dataIdx, state.nav.alt);
-        }
-        else if (dataIdx == dValSpeed)
-        {
-            state.nav.speed = messenger.readFloatArg();
-            disp.updateSpeed();
-            sendCmdDebugMsg(messenger.commandID(), dataIdx, state.nav.speed);
-        }
-        else if (dataIdx == dValHDG)
-        {
-            state.nav.hdg = messenger.readInt32Arg();
-            disp.updateHeading();
-            sendCmdDebugMsg(messenger.commandID(), dataIdx, state.nav.hdg);
-        }
-        else if (dataIdx == dValCRS)
-        {
-            state.nav.crs = messenger.readInt32Arg();
-            disp.updateCourse();
-            sendCmdDebugMsg(messenger.commandID(), dataIdx, state.nav.crs);
-        }
-        else if (dataIdx == dValTXPDR)
-        {
-            state.radio.xpdr = messenger.readInt32Arg();
-            disp.updateTransponderCode();
-            sendCmdDebugMsg(messenger.commandID(), dataIdx, state.radio.xpdr);
-        }
-        else if (dataIdx == dValRFREQ_A)
-        {
-            state.radio.freq.active = messenger.readFloatArg();
-            disp.updateRadioFrequencyActive();
-            sendCmdDebugMsg(messenger.commandID(), dataIdx, state.radio.freq.active);
-        }
-        else if (dataIdx == dValRFREQ_S)
-        {
-            state.radio.freq.standby = messenger.readFloatArg();
-            disp.updateRadioFrequencyStandby();
-            sendCmdDebugMsg(messenger.commandID(), dataIdx, state.radio.freq.standby);
-        }
-        else if (dataIdx == dValBARO)
-        {
-            state.nav.baro = messenger.readFloatArg();
-            disp.updateBarometer();
-            sendCmdDebugMsg(messenger.commandID(), dataIdx, state.nav.baro);
+            if (dataIdx == dValALT)
+            {
+                updateDisplayField(&state.nav.alt, row);
+                disp.updateAltitude();
+                sendCmdDebugMsg(messenger.commandID(), dataIdx, state.nav.alt);
+            }
+            else if (dataIdx == dValSpeed)
+            {
+                updateDisplayField(&state.nav.speed, row);
+                disp.updateSpeed();
+                disp.updateSpeedLabel();
+                sendCmdDebugMsg(messenger.commandID(), dataIdx, state.nav.speed);
+            }
+            else if (dataIdx == dValHDG)
+            {
+                updateDisplayField(&state.nav.hdg, row);
+                disp.updateHeading();
+                disp.updateHeadingLabel();
+                sendCmdDebugMsg(messenger.commandID(), dataIdx, state.nav.hdg);
+            }
+            else if (dataIdx == dValCRS)
+            {
+                state.nav.crs = messenger.readInt32Arg();
+                disp.updateCourse();
+                sendCmdDebugMsg(messenger.commandID(), dataIdx, state.nav.crs);
+            }
+            else if (dataIdx == dValTXPDR)
+            {
+                state.radio.xpdr = messenger.readInt32Arg();
+                disp.updateTransponderCode();
+                sendCmdDebugMsg(messenger.commandID(), dataIdx, state.radio.xpdr);
+            }
+            else if (dataIdx == dValRFREQ_A)
+            {
+                state.radio.freq.active = messenger.readFloatArg();
+                disp.updateRadioFrequencyActive();
+                sendCmdDebugMsg(messenger.commandID(), dataIdx, state.radio.freq.active);
+            }
+            else if (dataIdx == dValRFREQ_S)
+            {
+                state.radio.freq.standby = messenger.readFloatArg();
+                disp.updateRadioFrequencyStandby();
+                sendCmdDebugMsg(messenger.commandID(), dataIdx, state.radio.freq.standby);
+            }
+            else if (dataIdx == dValBARO)
+            {
+                state.nav.baro = messenger.readFloatArg();
+                disp.updateBarometer();
+                sendCmdDebugMsg(messenger.commandID(), dataIdx, state.nav.baro);
+            }
         }
         else
         {
             messenger.sendCmd(kDebug, "Unknown DATA index " + String(dataIdx) + "."); // Writing the Spad Log that we turned the FD Annunciator ON...
         }
-
         // Ensure everything has been read in.
         while (messenger.available())
         {
@@ -365,7 +379,7 @@ void CommsController::updateCourseSource(uint8_t selection)
 void CommsController::updateSpeedMode(uint8_t selection)
 {
     String msg = F("Speed change: ");
-    state.nav.speed = 0.0;
+    state.nav.speed.value = 0.0;
     sendInput(iSelAPSpeed, selection, msg);
 }
 

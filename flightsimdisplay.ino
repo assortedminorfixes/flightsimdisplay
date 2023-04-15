@@ -64,7 +64,7 @@ void loop()
           break;
         case TouchEventType::SPEED_BUTTON:
           comms.updateSpeedMode(te.value);
-          disp.updateSpeedLabel(te.value);
+          disp.updateSpeedLabel();
           break;
         case TouchEventType::BARO_BUTTON:
           comms.updateBaroMode(te.value);
@@ -93,17 +93,19 @@ void loop()
   {
     disp.printStatic();
     disp.updateCourseLabel(state.nav.crs_sel);
-    disp.updateSpeedLabel(state.nav.speed_mode_sel);
+    disp.updateSpeedLabel();
     disp.updateBarometerLabel(state.nav.baro_mode_sel);
+    disp.updateHeadingLabel();
     disp.redraw(true);
   }
 
   // If virtual power is off, but the off splash is not printed,
   // then print the off splash.
-  else if (state.configured && !state.power && !state.display_off && state.isReady()) {
-      disp.printSplash(F("-"));
-      lights.update();
-      state.display_off = true;
+  else if (state.configured && !state.power && !state.display_off && state.isReady())
+  {
+    disp.printSplash(F("-"));
+    lights.update();
+    state.display_off = true;
   }
 
 } // End of the Main Loop

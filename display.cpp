@@ -5,13 +5,6 @@
 #include "featherwing_touch.hh"
 #include "state.hh"
 
-#include "fonts/b612reg10pt.h"
-#include "fonts/b612bold7pt.h"
-#include "fonts/b612bold16pt.h"
-#include "fonts/b612monoreg18pt.h"
-#include "fonts/b612monoreg24pt.h"
-#include "fonts/b612monoreg24pt-deg.h"
-
 #include <SPI.h>
 
 #ifdef __arm__
@@ -33,6 +26,12 @@ int freeMemory()
 #endif // __arm__
 }
 
+template <typename T>
+int sgn(T val)
+{
+    return (T(0) < val) - (val < T(0));
+}
+
 #define HX8357_CUST_GRAY 0x9CD3
 
 #define CANVAS_NUM_H 45
@@ -43,6 +42,8 @@ int freeMemory()
 #define CANVAS_NUM_LARGE_W 160
 #define CANVAS_CENTER_H 60
 #define CANVAS_CENTER_W 200
+#define CANVAS_LABEL_H 20
+#define CANVAS_LABEL_W 160
 
 #define RADIO_BUTTON_H 30
 #define RADIO_BUTTON_V 50
@@ -52,32 +53,49 @@ int freeMemory()
 
 #define DATA_RADIO_ACT_POS_X 0
 #define DATA_RADIO_ACT_POS_Y 25
+#define LABEL_RADIO_ACT_POS_X 0
+#define LABEL_RADIO_ACT_POS_Y 5
 
 #define DATA_RADIO_STANDBY_POS_X 160
 #define DATA_RADIO_STANDBY_POS_Y 25
+#define LABEL_RADIO_STANDBY_POS_X 160
+#define LABEL_RADIO_STANDBY_POS_Y 5
 
 #define DATA_ALT_POS_X 0
 #define DATA_ALT_POS_Y 180
+#define LABEL_ALT_POS_X 0
+#define LABEL_ALT_POS_Y 160
 
 #define DATA_SPEED_POS_X 160
 #define DATA_SPEED_POS_Y 180
+#define LABEL_SPEED_POS_X 160
+#define LABEL_SPEED_POS_Y 160
 
 #define DATA_HDG_POS_X 0
 #define DATA_HDG_POS_Y 265
+#define LABEL_HDG_POS_X 0
+#define LABEL_HDG_POS_Y 245
 
 #define DATA_CRS_POS_X 160
 #define DATA_CRS_POS_Y 265
+#define LABEL_CRS_POS_X 160
+#define LABEL_CRS_POS_Y 245
 
 #define DATA_XPDR_POS_X 0
 #define DATA_XPDR_POS_Y 360
+#define LABEL_XPDR_POS_X 0
+#define LABEL_XPDR_POS_Y 340
 
 #define DATA_BARO_POS_X 160
 #define DATA_BARO_POS_Y 360
+#define LABEL_BARO_POS_X 160
+#define LABEL_BARO_POS_Y 340
 
 #define CENTER_LABEL_POS_X 60
 #define CENTER_LABEL_POS_Y 160
 
 #define DECIMAL_PAD 5
+#define DEBUG_STR_LENGTH 25
 
 #define TS_MINX 150
 #define TS_MINY 130
@@ -102,7 +120,7 @@ void Display::initDisplay()
     ts.begin();
 
     cCenter.fillScreen(HX8357_BLACK);
-    cCenter.setFont(&B612_Bold16pt7b);
+    cCenter.setFont(font_var_title.normal);
     cCenter.setCursor(5, 50);
     cCenter.print(F("Initializing"));
     lcd.drawBitmap(CENTER_LABEL_POS_X, CENTER_LABEL_POS_Y, cCenter.getBuffer(), CANVAS_CENTER_W, CANVAS_CENTER_H, HX8357_WHITE);
@@ -169,7 +187,7 @@ TouchEvent Display::processTouch()
             update.crs = true;
             return TouchEvent(TouchEventType::CRS_BUTTON, state.nav.crs_sel);
         }
-        else if (speed_sel > -1)
+        else if (speed_sel > -1 && update.speed_lbl == false)
         {
             state.nav.speed_mode_sel = (state.nav.speed_mode_sel + 1) % this->speed_labels;
             update.speed = true;
@@ -205,7 +223,7 @@ void Display::printSplash(String str)
     state.display_static = false;
     lcd.fillScreen(HX8357_BLACK);
     cCenter.fillScreen(HX8357_BLACK);
-    cCenter.setFont(&B612_Bold16pt7b);
+    cCenter.setFont(font_var_title.normal);
     cCenter.setCursor(5, 50);
     cCenter.print(str);
     lcd.drawBitmap(CENTER_LABEL_POS_X, CENTER_LABEL_POS_Y, cCenter.getBuffer(), CANVAS_CENTER_W, CANVAS_CENTER_H, HX8357_WHITE);
@@ -216,32 +234,18 @@ void Display::printStatic()
     lcd.fillScreen(HX8357_BLACK); // initialize the lcd
 
     lcd.setTextColor(HX8357_GREEN);
-    lcd.setFont(&B612_Regular10pt7b);
-    lcd.setCursor(5, 20);
-    lcd.print(F("Active"));
-    lcd.setCursor(165, 20);
-    lcd.print(F("Standby"));
+    lcd.setFont(font_var_lbl.normal);
+
+    this->drawLabel(LABEL_RADIO_ACT_POS_X, LABEL_RADIO_ACT_POS_Y, F("Active"));
+    this->drawLabel(LABEL_RADIO_STANDBY_POS_X, LABEL_RADIO_STANDBY_POS_Y, F("Standby"));
 
     lcd.drawFastHLine(0, 145, 320, HX8357_WHITE);
-
-    lcd.setCursor(5, 175);
-    lcd.print(F("Altitude"));
-    lcd.setCursor(165, 175);
-    lcd.print(F("")); // Room for Vertical Speed Label
+    this->drawLabel(LABEL_ALT_POS_X, LABEL_ALT_POS_Y, F("Altitude"));
 
     lcd.drawFastHLine(0, 230, 320, HX8357_WHITE);
 
-    lcd.setCursor(5, 260);
-    lcd.print(F("Heading"));
-    lcd.setCursor(165, 260);
-    lcd.print(F("")); // Room for Course Label
-
     lcd.drawFastHLine(0, 325, 320, HX8357_WHITE);
-
-    lcd.setCursor(5, 355);
-    lcd.print(F("XPDR"));
-    lcd.setCursor(165, 355);
-    lcd.print(F("")); // Room for Barometer Label
+    this->drawLabel(LABEL_XPDR_POS_X, LABEL_XPDR_POS_Y, F("XPDR"));
 
     lcd.drawFastHLine(0, 410, 320, HX8357_WHITE);
 
@@ -256,7 +260,7 @@ void Display::drawRadioSelectButton(uint8_t active)
     colors[active] = HX8357_WHITE;
 
     lcd.setTextColor(HX8357_BLACK);
-    lcd.setFont(&B612_Bold7pt7b);
+    lcd.setFont(font_var_lbl_b.normal);
 
     uint8_t button_pos_v = 0;
     for (int i = 0; i < 5; i++)
@@ -270,6 +274,20 @@ void Display::drawRadioSelectButton(uint8_t active)
     update.radio_select_buttons = false;
 }
 
+void Display::drawLabel(uint16_t x, uint16_t y, const char *label)
+{
+    GFXcanvas1 canvas(CANVAS_LABEL_W, CANVAS_LABEL_H);
+    canvas.setFont(font_var_lbl.normal);
+    canvas.setCursor(5, 15);
+    canvas.printf("%s", label);
+    lcd.drawBitmap(x, y, canvas.getBuffer(), CANVAS_LABEL_W, CANVAS_LABEL_H, HX8357_GREEN, HX8357_BLACK);
+}
+
+void Display::drawLabel(uint16_t x, uint16_t y, String label)
+{
+    this->drawLabel(x, y, label.c_str());
+}
+
 void Display::redraw(bool full)
 {
     if (update.radio_active || full)
@@ -280,10 +298,14 @@ void Display::redraw(bool full)
         drawRadioSelectButton(state.radio.sel);
     if (update.alt || full)
         drawAltitude();
+    if (update.speed_lbl || full)
+        drawSpeedLabel();
     if (update.speed || full)
         drawSpeed();
     if (update.hdg || full)
         drawHeading();
+    if (update.hdg_lbl || full)
+        drawHeadingLabel();
     if (update.crs || full)
         drawCourse();
     if (update.xpdr || full)
@@ -300,12 +322,22 @@ void Display::updateAltitude()
 void Display::drawAltitude()
 {
     GFXcanvas1 canvas(CANVAS_NUM_W, CANVAS_NUM_H);
-    canvas.setFont(&B612Mono_Regular18pt7b);
+    canvas.setFont(font_mono_val_s.normal);
     canvas.setCursor(CANVAS_NUM_UL_X, CANVAS_NUM_UL_Y);
-    if (state.nav.alt != 0)
-        canvas.printf("%5i", state.nav.alt);
+    if (state.nav.alt.value != 0)
+    {
+        canvas.printf("%5i", (uint16_t)state.nav.alt.value);
+    }
     else
-        canvas.printf("-----", state.nav.alt);
+    {
+        printDash(5, &canvas, &font_mono_val_s);
+    }
+    if (state.nav.alt.dot == true)
+    {
+        canvas.setFont(font_mono_val_s.dot);
+        canvas.printf(SYM_DOT);
+    }
+
     lcd.drawBitmap(DATA_ALT_POS_X, DATA_ALT_POS_Y, canvas.getBuffer(), CANVAS_NUM_W, CANVAS_NUM_H, HX8357_WHITE, HX8357_BLACK);
     update.alt = false;
 }
@@ -315,58 +347,68 @@ void Display::updateSpeed()
     update.speed = true;
 }
 
-void Display::updateSpeedLabel(uint8_t selection)
+void Display::updateSpeedLabel()
 {
-    lcd.setFont(&B612_Regular10pt7b);
-    lcd.setTextColor(HX8357_BLACK);
-    lcd.setCursor(165, 175);
-    lcd.printf("%s ", SPEED_LABEL[(selection + (this->speed_labels - 1)) % this->speed_labels]);
-
-    lcd.setTextColor(HX8357_GREEN);
-    lcd.setCursor(165, 175);
-    lcd.printf("%s ", SPEED_LABEL[selection]);
-
+    update.speed_lbl = true;
     update.speed = true;
+}
+
+void Display::drawSpeedLabel()
+{
+    if (state.nav.speed.label.length() > 0)
+    {
+        this->drawLabel(LABEL_SPEED_POS_X, LABEL_SPEED_POS_Y, state.nav.speed.label);
+    }
+    else
+    {
+        this->drawLabel(LABEL_SPEED_POS_X, LABEL_SPEED_POS_Y, SPEED_LABEL[state.nav.speed_mode_sel]);
+    }
+    update.speed_lbl = false;
 }
 
 void Display::drawSpeed()
 {
     GFXcanvas1 canvas(CANVAS_NUM_W, CANVAS_NUM_H);
-    canvas.setFont(&B612Mono_Regular18pt7b);
+    canvas.setFont(font_mono_val_s.normal);
     canvas.setCursor(CANVAS_NUM_UL_X, CANVAS_NUM_UL_Y);
     if (state.nav.speed_mode_sel == 0)
     {
-        if (state.nav.speed != 0)
+        if (state.nav.speed.dashes)
         {
-            canvas.printf("%5i", (int16_t)state.nav.speed); // VS
-            lcd.drawBitmap(DATA_SPEED_POS_X, DATA_SPEED_POS_Y, canvas.getBuffer(), CANVAS_NUM_W, CANVAS_NUM_H, HX8357_CYAN, HX8357_BLACK);
+            printDash(5, &canvas, &font_mono_val_s);
         }
-        else
+        else if (fabsf(state.nav.speed.value) > 10.0) // VS
         {
-            canvas.printf("-----");
-            lcd.drawBitmap(DATA_SPEED_POS_X, DATA_SPEED_POS_Y, canvas.getBuffer(), CANVAS_NUM_W, CANVAS_NUM_H, HX8357_CYAN, HX8357_BLACK);
+            this->trimDecimal(state.nav.speed.value, 4, 0, false, true, CANVAS_NUM_UL_X, CANVAS_NUM_UL_Y, &canvas, &font_mono_val_s);
+        }
+        else // FPA
+        {
+            this->trimDecimal(state.nav.speed.value, 1, 1, false, true, CANVAS_NUM_UL_X, CANVAS_NUM_UL_Y, &canvas, &font_mono_val_s);
         }
     }
     else if (state.nav.speed_mode_sel == 1)
     {
-        if (state.nav.speed > 0 and state.nav.speed < 5)
+        if (state.nav.speed.value > 0 and state.nav.speed.value < 5)
         {
-            canvas.printf("%4.2f", state.nav.speed); // Mach
-
-            GFXcanvas1 dec_canv = this->trimDecimal(state.nav.speed, 1, 2, CANVAS_NUM_UL_X, CANVAS_NUM_UL_Y, &B612Mono_Regular18pt7b);
-            lcd.drawBitmap(DATA_SPEED_POS_X, DATA_SPEED_POS_Y, dec_canv.getBuffer(), CANVAS_NUM_W, CANVAS_NUM_H, HX8357_CYAN, HX8357_BLACK);
+            this->trimDecimal(state.nav.speed.value, 1, 2, false, false, CANVAS_NUM_UL_X, CANVAS_NUM_UL_Y, &canvas, &font_mono_val_s);
         }
-        else if (state.nav.speed >= 5)
+        else if (state.nav.speed.value >= 5)
         {
-            canvas.printf("%3i", (int16_t)state.nav.speed); // IAS
-            lcd.drawBitmap(DATA_SPEED_POS_X, DATA_SPEED_POS_Y, canvas.getBuffer(), CANVAS_NUM_W, CANVAS_NUM_H, HX8357_CYAN, HX8357_BLACK);
+            canvas.printf("%3i", (uint16_t)state.nav.speed.value); // IAS
         }
         else
         {
-            canvas.printf("-----");
-            lcd.drawBitmap(DATA_SPEED_POS_X, DATA_SPEED_POS_Y, canvas.getBuffer(), CANVAS_NUM_W, CANVAS_NUM_H, HX8357_CYAN, HX8357_BLACK);
+            printDash(3, &canvas, &font_mono_val_s);
+        }
+
+        if (state.nav.speed.dot == true)
+        {
+            canvas.setFont(font_mono_val_s.dot);
+            canvas.printf(SYM_DOT);
         }
     }
+
+    lcd.drawBitmap(DATA_SPEED_POS_X, DATA_SPEED_POS_Y, canvas.getBuffer(), CANVAS_NUM_W, CANVAS_NUM_H, HX8357_CYAN, HX8357_BLACK);
     update.speed = false;
 }
 
@@ -375,22 +417,57 @@ void Display::updateHeading()
     update.hdg = true;
 }
 
+void Display::updateHeadingLabel()
+{
+    update.hdg_lbl = true;
+}
+
 void Display::drawHeading()
 {
     int16_t print_hdg;
-    if (state.nav.hdg == 0)
+    if (state.nav.hdg.value == 0)
         print_hdg = 360;
     else
-        print_hdg = state.nav.hdg;
+        print_hdg = state.nav.hdg.value;
 
     GFXcanvas1 canvas(CANVAS_NUM_LARGE_W, CANVAS_NUM_LARGE_H);
-    canvas.setFont(&B612Mono_Regular24pt7b);
+    canvas.setFont(font_mono_val_l.normal);
     canvas.setCursor(5, 45);
-    canvas.printf("%03i", print_hdg);
-    canvas.setFont(&B612Mono_Regular24pt8b);
-    canvas.printf(deg);
+    if (state.nav.hdg.dashes == true || state.nav.hdg.value < 0)
+    {
+        printDash(3, &canvas, &font_mono_val_l);
+    }
+    else
+    {
+        canvas.printf("%03i", print_hdg);
+
+        if (state.nav.hdg.dot == false)
+        {
+            canvas.setFont(font_mono_val_l.deg);
+            canvas.printf(SYM_DEG);
+        }
+    }
+    if (state.nav.hdg.dot == true)
+    {
+        canvas.setFont(font_mono_val_l.dot);
+        canvas.printf(SYM_DOT);
+    }
+
     lcd.drawBitmap(DATA_HDG_POS_X, DATA_HDG_POS_Y, canvas.getBuffer(), CANVAS_NUM_LARGE_W, CANVAS_NUM_LARGE_H, HX8357_WHITE, HX8357_BLACK);
     update.hdg = false;
+}
+
+void Display::drawHeadingLabel()
+{
+    if (state.nav.hdg.label.length() > 0)
+    {
+        this->drawLabel(LABEL_HDG_POS_X, LABEL_HDG_POS_Y, state.nav.hdg.label);
+    }
+    else
+    {
+        this->drawLabel(LABEL_HDG_POS_X, LABEL_HDG_POS_Y, HEADING_LABEL[0]);
+    }
+    update.hdg_lbl = false;
 }
 
 void Display::updateCourse()
@@ -400,7 +477,7 @@ void Display::updateCourse()
 
 void Display::updateCourseLabel(uint8_t selection)
 {
-    lcd.setFont(&B612_Regular10pt7b);
+    lcd.setFont(font_var_lbl.normal);
     lcd.setTextColor(HX8357_BLACK);
     lcd.setCursor(165, 260);
     lcd.printf("Course %s ", CRS_LABEL[(selection + (this->crs_labels - 1)) % this->crs_labels]);
@@ -419,11 +496,11 @@ void Display::drawCourse()
         print_crs = state.nav.crs;
 
     GFXcanvas1 canvas(CANVAS_NUM_LARGE_W, CANVAS_NUM_LARGE_H);
-    canvas.setFont(&B612Mono_Regular24pt7b);
+    canvas.setFont(font_mono_val_l.normal);
     canvas.setCursor(5, 45);
     canvas.printf("%03i", print_crs);
-    canvas.setFont(&B612Mono_Regular24pt8b);
-    canvas.printf(deg);
+    canvas.setFont(font_mono_val_l.deg);
+    canvas.printf(SYM_DEG);
     lcd.drawBitmap(DATA_CRS_POS_X, DATA_CRS_POS_Y, canvas.getBuffer(), CANVAS_NUM_LARGE_W, CANVAS_NUM_LARGE_H, HX8357_CYAN, HX8357_BLACK);
     update.crs = false;
 }
@@ -436,7 +513,7 @@ void Display::updateTransponderCode()
 void Display::drawTransponderCode()
 {
     GFXcanvas1 canvas(CANVAS_NUM_W, CANVAS_NUM_H);
-    canvas.setFont(&B612Mono_Regular18pt7b);
+    canvas.setFont(font_mono_val_s.normal);
     canvas.setCursor(CANVAS_NUM_UL_X, CANVAS_NUM_UL_Y);
     if (state.radio.xpdr != 0)
     {
@@ -444,7 +521,7 @@ void Display::drawTransponderCode()
     }
     else
     {
-        canvas.printf("----");
+        printDash(4, &canvas, &font_mono_val_s);
     }
     lcd.drawBitmap(DATA_XPDR_POS_X, DATA_XPDR_POS_Y, canvas.getBuffer(), CANVAS_NUM_W, CANVAS_NUM_H, HX8357_WHITE, HX8357_BLACK);
     update.xpdr = false;
@@ -457,7 +534,7 @@ void Display::updateBarometer()
 
 void Display::updateBarometerLabel(uint8_t selection)
 {
-    lcd.setFont(&B612_Regular10pt7b);
+    lcd.setFont(font_var_lbl.normal);
     lcd.setTextColor(HX8357_BLACK);
     lcd.setCursor(165, 355);
     lcd.printf("%s ", BARO_LABEL[(selection + (this->baro_labels - 1)) % this->baro_labels]);
@@ -467,23 +544,22 @@ void Display::updateBarometerLabel(uint8_t selection)
     lcd.printf("%s ", BARO_LABEL[selection]);
 
     update.baro = true;
-
 }
 
 void Display::drawBarometer()
 {
     GFXcanvas1 canvas(CANVAS_NUM_W, CANVAS_NUM_H);
-    canvas.setFont(&B612Mono_Regular18pt7b);
+    canvas.setFont(font_mono_val_s.normal);
     canvas.setCursor(CANVAS_NUM_UL_X, CANVAS_NUM_UL_Y);
 
     if (state.nav.baro < 1.0)
     {
-        canvas.printf("-----");
+        printDash(4, &canvas, &font_mono_val_s);
         lcd.drawBitmap(DATA_BARO_POS_X, DATA_BARO_POS_Y, canvas.getBuffer(), CANVAS_NUM_W, CANVAS_NUM_H, HX8357_CYAN, HX8357_BLACK);
     }
     else if (state.nav.baro_mode_sel == 1)
     {
-        canvas = this->trimDecimal(state.nav.baro, 2, 2, CANVAS_NUM_UL_X, CANVAS_NUM_UL_Y, &B612Mono_Regular18pt7b);
+        this->trimDecimal(state.nav.baro, 2, 2, true, false, CANVAS_NUM_UL_X, CANVAS_NUM_UL_Y, &canvas, &font_mono_val_s);
         lcd.drawBitmap(DATA_BARO_POS_X, DATA_BARO_POS_Y, canvas.getBuffer(), CANVAS_NUM_W, CANVAS_NUM_H, HX8357_CYAN, HX8357_BLACK);
     }
     else
@@ -524,8 +600,9 @@ void Display::drawRadioActive()
         frac_digits = 1;
     }
 
-    GFXcanvas1 canv = this->trimDecimal(state.radio.freq.active, pad_digits, frac_digits, CANVAS_NUM_UL_X, CANVAS_NUM_UL_Y, &B612Mono_Regular18pt7b);
-    lcd.drawBitmap(DATA_RADIO_ACT_POS_X, DATA_RADIO_ACT_POS_Y, canv.getBuffer(), CANVAS_NUM_W, CANVAS_NUM_H, HX8357_WHITE, HX8357_BLACK);
+    GFXcanvas1 canvas(CANVAS_NUM_W, CANVAS_NUM_H);
+    this->trimDecimal(state.radio.freq.active, pad_digits, frac_digits, true, false, CANVAS_NUM_UL_X, CANVAS_NUM_UL_Y, &canvas, &font_mono_val_s);
+    lcd.drawBitmap(DATA_RADIO_ACT_POS_X, DATA_RADIO_ACT_POS_Y, canvas.getBuffer(), CANVAS_NUM_W, CANVAS_NUM_H, HX8357_WHITE, HX8357_BLACK);
     update.radio_active = false;
 }
 
@@ -542,17 +619,34 @@ void Display::drawRadioStandby()
         pad_digits = 4;
     }
 
-    GFXcanvas1 canv = this->trimDecimal(state.radio.freq.standby, pad_digits, frac_digits, CANVAS_NUM_UL_X, CANVAS_NUM_UL_Y, &B612Mono_Regular18pt7b);
-    lcd.drawBitmap(DATA_RADIO_STANDBY_POS_X, DATA_RADIO_STANDBY_POS_Y, canv.getBuffer(), CANVAS_NUM_W, CANVAS_NUM_H, HX8357_CYAN, HX8357_BLACK);
+    GFXcanvas1 canvas(CANVAS_NUM_W, CANVAS_NUM_H);
+    this->trimDecimal(state.radio.freq.standby, pad_digits, frac_digits, true, false, CANVAS_NUM_UL_X, CANVAS_NUM_UL_Y, &canvas, &font_mono_val_s);
+    lcd.drawBitmap(DATA_RADIO_STANDBY_POS_X, DATA_RADIO_STANDBY_POS_Y, canvas.getBuffer(), CANVAS_NUM_W, CANVAS_NUM_H, HX8357_CYAN, HX8357_BLACK);
     update.radio_standby = false;
 }
 
 void Display::printLastCommand(uint8_t command, uint8_t idx, int32_t val)
 {
+    this->printLastCommand(command, idx, String(val));
+}
+
+void Display::printLastCommand(uint8_t command, uint8_t idx, const String val)
+{
     lcd.setTextColor(HX8357_CYAN, HX8357_BLACK);
     lcd.setFont(NULL);
     lcd.setCursor(5, 465);
-    lcd.printf("Cmd: %2d %2d %d        ", command, idx, val);
+    dbg_str = F("Cmd: ");
+    dbg_str.concat((int)command);
+    dbg_str.concat(' ');
+    dbg_str.concat((int)idx);
+    dbg_str.concat(' ');
+    dbg_str.concat(val);
+
+    while (dbg_str.length() < DEBUG_STR_LENGTH)
+    {
+        dbg_str.concat(' ');
+    }
+    lcd.printf("%s", dbg_str.substring(0, min(dbg_str.length(), DEBUG_STR_LENGTH) - 1).c_str());
 }
 
 void Display::printMem()
@@ -571,47 +665,72 @@ void Display::printDebug(String msg)
     lcd.printf(msg.c_str());
 }
 
-GFXcanvas1 Display::trimDecimal(float_t num, uint8_t padding, uint8_t decimals, int x, int y, const GFXfont *font)
+void Display::trimDecimal(float_t num, uint8_t padding, uint8_t decimals, bool dashes, bool force_sign, int x, int y, GFXcanvas1 *canvas, const Fonts *font)
 {
+    const float_t COMP_EPSILON = 1.0 / pow(10, decimals + 1);
 
-    GFXcanvas1 canvas(CANVAS_NUM_W, CANVAS_NUM_H);
-    String numStr;
-    if (num != 0.0)
-        numStr = String(num, decimals);
+    // GFXcanvas1 canvas(CANVAS_NUM_W, CANVAS_NUM_H);
+    String num_str = "";
+
+    bool negative = (sgn(num) == -1);
+
+    if (fabsf(num) < COMP_EPSILON && dashes)
+    {
+        for (int i = 0; i < padding; i++)
+            num_str.concat('-');
+        num_str.concat('.');
+        for (int i = 0; i < decimals; i++)
+            num_str.concat('-');
+        canvas->setFont(font->normal);
+    }
     else
     {
-        numStr = "";
-        for (int i = 0; i < padding; i++)
-            numStr.concat('-');
-        numStr.concat('.');
-        for (int i = 0; i < decimals; i++)
-            numStr.concat('-');
+        num_str.concat(String(fabsf(num), decimals));
+        canvas->setFont(font->normal);
     }
 
-    String numStr_int = getStringValue(numStr, '.', 0);
-    String numStr_int_pad = "";
-    uint8_t pads = (padding)-numStr_int.length();
+    String num_str_int = getStringValue(num_str, '.', 0);
+    String num_str_int_pad;
+    if (force_sign && !negative)
+    {
+        num_str_int_pad.concat('+');
+    }
+    else if (negative)
+    {
+        num_str_int_pad.concat('-');
+    }
+    uint8_t pads = padding - num_str_int.length();
     for (int i = 0; i < pads; i++)
     {
-        numStr_int_pad.concat('0');
+        num_str_int_pad.concat('0');
     }
-    numStr_int_pad.concat(numStr_int);
-    numStr_int_pad.concat('.');
+    num_str_int_pad.concat(num_str_int);
 
-    String numStr_frac = getStringValue(numStr, '.', 1);
+    if (decimals > 0)
+        num_str_int_pad.concat('.');
 
-    // canvas.fillScreen(HX8357_BLACK);
-    canvas.setFont(font);
-    canvas.setCursor(x, y);
+    String num_str_frac = getStringValue(num_str, '.', 1);
+
+    canvas->setCursor(x, y);
 
     int16_t x1, y1;
     uint16_t w, h;
-    canvas.getTextBounds(numStr_int_pad.c_str(), x, y, &x1, &y1, &w, &h); // calc width of new string
-    canvas.printf("%s", numStr_int_pad.c_str());
-    canvas.setCursor(x + w + DECIMAL_PAD, y);
-    canvas.printf("%s", numStr_frac.c_str());
+    canvas->getTextBounds(num_str_int_pad.c_str(), x, y, &x1, &y1, &w, &h); // calc width of new string
+    canvas->printf("%s", num_str_int_pad.c_str());
+    canvas->setCursor(x + w + DECIMAL_PAD, y);
+    canvas->printf("%s", num_str_frac.c_str());
 
-    return canvas;
+    return;
+}
+
+void Display::printDash(uint8_t num, GFXcanvas1 *canvas, const Fonts *font)
+{
+    canvas->setFont(font->dash);
+
+    for (uint8_t i = 0; i < num; i++)
+    {
+        canvas->print('-');
+    }
 }
 
 // https://stackoverflow.com/questions/9072320/split-string-into-string-array

@@ -4,6 +4,7 @@
 #include <CmdMessenger.h> // CmdMessenger ... v4.2 was used when making this sketch
 #include "Arduino.h"
 #include "featherwing_touch.hh"
+#include "state.hh"
 
 #define MESSAGING_DELAY 10
 
@@ -80,10 +81,10 @@ class CommsController {
             {"OUTPUT", dModeALT, "L_AP_ALT", "LED", "SPAD_LED_3COL", "UI_FACE=1,PANEL=LED"},
             {"OUTPUT", dModeVS, "L_AP_VS", "LED", "SPAD_LED_3COL", "UI_FACE=1,PANEL=LED"},
             {"OUTPUT", dModeAPR, "L_AP_APR", "LED", "SPAD_LED_3COL", "UI_FACE=1,PANEL=LED"},
-            {"OUTPUT", dValHDG, "D_AP_HDG", "DISPLAY", "SPAD_DISPLAY", "LENGTH=3,HEIGHT=40,WIDTH=100,PANEL=Display"},
-            {"OUTPUT", dValCRS, "D_AP_CRS", "DISPLAY", "SPAD_DISPLAY", "LENGTH=3,HEIGHT=40,WIDTH=100,PANEL=Display"},
-            {"OUTPUT", dValALT, "D_AP_ALT", "DISPLAY", "SPAD_DISPLAY", "LENGTH=5,HEIGHT=40,WIDTH=100,PANEL=Display"},
-            {"OUTPUT", dValSpeed, "D_AP_SPEED", "DISPLAY", "SPAD_DISPLAY", "LENGTH=5,HEIGHT=40,WIDTH=100,PANEL=Display"},
+            {"OUTPUT", dValHDG, "D_AP_HDG", "DISPLAY", "SPAD_DISPLAY", "LENGTH=8,ROWS=4,HEIGHT=120,WIDTH=100,PANEL=Display"},
+            {"OUTPUT", dValCRS, "D_AP_CRS", "DISPLAY", "SPAD_DISPLAY", "LENGTH=8,HEIGHT=40,WIDTH=100,PANEL=Display"},
+            {"OUTPUT", dValALT, "D_AP_ALT", "DISPLAY", "SPAD_DISPLAY", "LENGTH=8,ROWS=4,HEIGHT=120,WIDTH=100,PANEL=Display"},
+            {"OUTPUT", dValSpeed, "D_AP_SPEED", "DISPLAY", "SPAD_DISPLAY", "LENGTH=5,ROWS=4,HEIGHT=120,WIDTH=100,PANEL=Display"},
             {"OUTPUT", dValTXPDR, "D_XPDR", "DISPLAY", "SPAD_DISPLAY", "LENGTH=4,HEIGHT=40,WIDTH=100,PANEL=Display"},
             {"OUTPUT", dValBARO, "D_BARO", "DISPLAY", "SPAD_DISPLAY", "LENGTH=5,HEIGHT=40,WIDTH=100,PANEL=Display"},
             {"OUTPUT", dValRFREQ_A, "D_RADIO_ACTIVE_FREQ", "DISPLAY", "SPAD_DISPLAY", "LENGTH=7,HEIGHT=40,WIDTH=150,PANEL=Display"},
@@ -98,6 +99,7 @@ class CommsController {
         static void onEvent();
         static void onData();
         static void onLED();
+        static void updateDisplayField(DisplayField* field, uint8_t row);
 
     public:
         static void attachCommandCallbacks();
