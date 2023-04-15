@@ -29,9 +29,9 @@ struct Fonts
 
 const Fonts font_mono_val_s = {&B612Mono_Regular18pt7b, &B612Mono_Regular18ptDot, &B612Mono_Regular18ptDash, &B612Mono_Regular18ptDeg};
 const Fonts font_mono_val_l = {&B612Mono_Regular24pt7b, &B612Mono_Regular24ptDot, &B612Mono_Regular24ptDash, &B612Mono_Regular24ptDeg};
-const Fonts font_var_title  = {&B612_Bold16pt7b, nullptr, nullptr, nullptr};
-const Fonts font_var_lbl    = {&B612_Regular10pt7b, nullptr, nullptr, nullptr};
-const Fonts font_var_lbl_b  = {&B612_Bold7pt7b, nullptr, nullptr, nullptr};
+const Fonts font_var_title = {&B612_Bold16pt7b, nullptr, nullptr, nullptr};
+const Fonts font_var_lbl = {&B612_Regular10pt7b, nullptr, nullptr, nullptr};
+const Fonts font_var_lbl_b = {&B612_Bold7pt7b, nullptr, nullptr, nullptr};
 
 enum TouchEventType
 {
@@ -58,9 +58,9 @@ class Display
 private:
    const char *RADIO_BUTTON_LABEL[5] = {"NAV1", "NAV2", "COM1", "COM2",
                                         "ADF"};
-   const char *CRS_LABEL[3] = {"OBS 1", "OBS 2", "GPS DTK"};
-   const char *SPEED_LABEL[2] = {"V/S", "Speed"};
-   const char *HEADING_LABEL[1] = {"Heading"};
+   const char *CRS_LABEL[4] = {"Heading", "Course OBS 1", "Course OBS 2", "GPS DTK"};
+   const char *VS_LABEL[1] = {"V/S"};
+   const char *IAS_LABEL[1] = {"Speed"};
    const char *BARO_LABEL[2] = {"Baro hPa", "Baro inHg"};
 
    const char SYM_DEG[1] = {0xB0};
@@ -70,17 +70,18 @@ private:
    String dbg_str;
 
    const uint8_t crs_labels = sizeof(CRS_LABEL) / sizeof(CRS_LABEL[0]);
-   const uint8_t speed_labels = sizeof(SPEED_LABEL) / sizeof(SPEED_LABEL[0]);
+   const uint8_t speed_labels = sizeof(VS_LABEL) / sizeof(VS_LABEL[0]);
    const uint8_t baro_labels = sizeof(BARO_LABEL) / sizeof(BARO_LABEL[0]);
 
    struct Update
    {
       bool alt = false;
-      bool speed = false;
-      bool speed_lbl = false;
+      bool vs = false;
+      bool vs_lbl = false;
+      bool ias = false;
+      bool ias_lbl = false;
       bool hdg = false;
       bool hdg_lbl = false;
-      bool crs = false;
       bool radio_active = false;
       bool radio_standby = false;
       bool radio_select_buttons = false;
@@ -94,11 +95,12 @@ private:
    void drawLabel(uint16_t x, uint16_t y, const char *label);
 
    void drawAltitude();
-   void drawSpeed();
-   void drawSpeedLabel();
+   void drawVS();
+   void drawVSLabel();
+   void drawIAS();
+   void drawIASLabel();
    void drawHeading();
    void drawHeadingLabel();
-   void drawCourse();
    void drawTransponderCode();
    void drawRadioActive();
    void drawRadioStandby();
@@ -128,12 +130,12 @@ public:
    void clearTouch();
 
    void updateAltitude();
-   void updateSpeed();
-   void updateSpeedLabel();
+   void updateVS();
+   void updateVSLabel();
+   void updateIAS();
+   void updateIASLabel();
    void updateHeading();
    void updateHeadingLabel();
-   void updateCourse();
-   void updateCourseLabel(uint8_t selection);
    void updateTransponderCode();
    void updateRadioFrequencyActive();
    void updateRadioFrequencyStandby();

@@ -34,11 +34,10 @@ struct DisplayField
 struct NAVData
 {
   DisplayField alt;
-  DisplayField speed;
-  uint8_t speed_mode_sel = 0;
+  DisplayField vs;
+  DisplayField ias;
   DisplayField hdg;
   uint8_t crs_sel = 0;
-  int16_t crs = 0;
   float_t baro = 0.0;
   uint8_t baro_mode_sel = 0;
 };
