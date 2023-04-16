@@ -76,10 +76,10 @@ int sgn(T val)
 #define LABEL_HDG_POS_X 0
 #define LABEL_HDG_POS_Y 245
 
-#define DATA_CRS_POS_X 160
-#define DATA_CRS_POS_Y 265
-#define LABEL_CRS_POS_X 160
-#define LABEL_CRS_POS_Y 245
+#define DATA_IAS_POS_X 160
+#define DATA_IAS_POS_Y 265
+#define LABEL_IAS_POS_X 160
+#define LABEL_IAS_POS_Y 245
 
 #define DATA_XPDR_POS_X 0
 #define DATA_XPDR_POS_Y 360
@@ -393,11 +393,11 @@ void Display::drawIASLabel()
 {
     if (state.nav.ias.label.length() > 0)
     {
-        this->drawLabel(LABEL_CRS_POS_X, LABEL_CRS_POS_Y, state.nav.ias.label);
+        this->drawLabel(LABEL_IAS_POS_X, LABEL_IAS_POS_Y, state.nav.ias.label);
     }
     else
     {
-        this->drawLabel(LABEL_CRS_POS_X, LABEL_CRS_POS_Y, IAS_LABEL[0]);
+        this->drawLabel(LABEL_IAS_POS_X, LABEL_IAS_POS_Y, IAS_LABEL[0]);
     }
     update.ias_lbl = false;
 }
@@ -427,7 +427,7 @@ void Display::drawIAS()
         canvas.printf(SYM_DOT);
     }
 
-    lcd.drawBitmap(DATA_CRS_POS_X, DATA_CRS_POS_Y, canvas.getBuffer(), CANVAS_NUM_LARGE_W, CANVAS_NUM_LARGE_H, HX8357_CYAN, HX8357_BLACK);
+    lcd.drawBitmap(DATA_IAS_POS_X, DATA_IAS_POS_Y, canvas.getBuffer(), CANVAS_NUM_LARGE_W, CANVAS_NUM_LARGE_H, HX8357_CYAN, HX8357_BLACK);
     update.ias = false;
 }
 
@@ -484,7 +484,7 @@ void Display::drawHeadingLabel()
     }
     else
     {
-        this->drawLabel(LABEL_HDG_POS_X, LABEL_HDG_POS_Y, CRS_LABEL[(state.nav.crs_sel + (this->crs_labels - 1)) % this->crs_labels]);
+        this->drawLabel(LABEL_HDG_POS_X, LABEL_HDG_POS_Y, CRS_LABEL[state.nav.crs_sel]);
     }
     update.hdg_lbl = false;
 }
