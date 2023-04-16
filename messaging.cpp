@@ -98,7 +98,7 @@ void CommsController::onIdentifyRequest()
         messenger.sendCmdArg("OPTION");
         messenger.sendCmdArg("ISGENERIC=1");
         messenger.sendCmdArg("PAGESUPPORT=0");
-        // messenger.sendCmdArg("OUT_COOLDOWN=" + String(MESSAGING_DELAY));
+        messenger.sendCmdArg("OUT_COOLDOWN=" + String(MESSAGING_DELAY));
         messenger.sendCmdArg("NO_DISPLAY_CLEAR=1");
         messenger.sendCmdArg("NO_LED_CLEAR=1");
         messenger.sendCmdArg("VPSUPPORT=1");
