@@ -143,9 +143,6 @@ void CommsController::onIdentifyRequest()
         // Provides currently selected CRS
         updateCourseSource(state.nav.crs_sel);
 
-        // Provides currently selected Speed Mode
-        updateSpeedMode(state.nav.speed_mode_sel);
-
         // Provides currently selected Baro mode
         updateBaroMode(state.nav.baro_mode_sel);
 
@@ -216,25 +213,26 @@ void CommsController::onData()
                 disp.updateAltitude();
                 sendCmdDebugMsg(messenger.commandID(), dataIdx, state.nav.alt);
             }
-            else if (dataIdx == dValSpeed)
+            else if (dataIdx == dValVS)
             {
-                updateDisplayField(&state.nav.speed, row);
-                disp.updateSpeed();
-                disp.updateSpeedLabel();
-                sendCmdDebugMsg(messenger.commandID(), dataIdx, state.nav.speed);
+                updateDisplayField(&state.nav.vs, row);
+                disp.updateVS();
+                disp.updateVSLabel();
+                sendCmdDebugMsg(messenger.commandID(), dataIdx, state.nav.vs);
             }
+            else if (dataIdx == dValIAS)
+            {
+                updateDisplayField(&state.nav.ias, row);
+                disp.updateIAS();
+                disp.updateIASLabel();
+                sendCmdDebugMsg(messenger.commandID(), dataIdx, state.nav.ias);
+            }            
             else if (dataIdx == dValHDG)
             {
                 updateDisplayField(&state.nav.hdg, row);
                 disp.updateHeading();
                 disp.updateHeadingLabel();
                 sendCmdDebugMsg(messenger.commandID(), dataIdx, state.nav.hdg);
-            }
-            else if (dataIdx == dValCRS)
-            {
-                state.nav.crs = messenger.readInt32Arg();
-                disp.updateCourse();
-                sendCmdDebugMsg(messenger.commandID(), dataIdx, state.nav.crs);
             }
             else if (dataIdx == dValTXPDR)
             {
@@ -329,12 +327,6 @@ void CommsController::onLED()
         break;
     }
 
-    // Ensure everything has been read in.
-    while (messenger.available())
-    {
-        char *arg = messenger.readStringArg();
-    }
-
     sendCmdDebugMsg(messenger.commandID(), dataIdx, enable);
 }
 
@@ -374,13 +366,6 @@ void CommsController::updateCourseSource(uint8_t selection)
 {
     String msg = F("Course change: ");
     sendInput(iSelCRS, selection, msg);
-}
-
-void CommsController::updateSpeedMode(uint8_t selection)
-{
-    String msg = F("Speed change: ");
-    state.nav.speed.value = 0.0;
-    sendInput(iSelAPSpeed, selection, msg);
 }
 
 void CommsController::updateBaroMode(uint8_t selection)

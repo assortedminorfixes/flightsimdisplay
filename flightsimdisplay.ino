@@ -11,11 +11,12 @@
  Display is based on the B612 font (https://github.com/polarsys/b612), converted for
  use with Adafruit GFX using fontconvert.
 */
+#include "featherwing_touch.hh"
 #include "state.hh"
 #include "display.hh"
 #include "messaging.hh"
 #include "lights.hh"
-#include "featherwing_touch.hh"
+
 
 Display disp{};
 LightController lights{};
@@ -60,11 +61,7 @@ void loop()
           break;
         case TouchEventType::CRS_BUTTON:
           comms.updateCourseSource(te.value);
-          disp.updateCourseLabel(te.value);
-          break;
-        case TouchEventType::SPEED_BUTTON:
-          comms.updateSpeedMode(te.value);
-          disp.updateSpeedLabel();
+          disp.updateHeadingLabel();
           break;
         case TouchEventType::BARO_BUTTON:
           comms.updateBaroMode(te.value);
@@ -92,8 +89,9 @@ void loop()
   else if (state.configured && state.power && !state.display_static && state.isReady())
   {
     disp.printStatic();
-    disp.updateCourseLabel(state.nav.crs_sel);
-    disp.updateSpeedLabel();
+    disp.updateHeadingLabel();
+    disp.updateVSLabel();
+    disp.updateIASLabel();
     disp.updateBarometerLabel(state.nav.baro_mode_sel);
     disp.updateHeadingLabel();
     disp.redraw(true);

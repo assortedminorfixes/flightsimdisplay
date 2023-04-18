@@ -6,7 +6,7 @@
 #include "featherwing_touch.hh"
 #include "state.hh"
 
-#define MESSAGING_DELAY 10
+#define MESSAGING_DELAY 50
 
 //// ------   Spad Coms Section ------ ///////
 static CmdMessenger messenger(Serial);
@@ -40,13 +40,13 @@ class CommsController {
             dModeAPR = 27,    //
             dModeREV = 28,    //
             dValALT = 29,     //
-            dValSpeed = 30,   //
+            dValVS = 30,   //
+            dValIAS = 31,   //
             dValHDG = 32,     //
-            dValCRS = 33,     //
             dValTXPDR = 34,   //
             dValBARO = 35,    //
             dValRFREQ_A = 36, //
-            dValRFREQ_S = 37, //
+            dValRFREQ_S = 37 //
         };
 
         enum : byte
@@ -68,11 +68,11 @@ class CommsController {
             const char *args;
         };
 
-        #define MSG_INOUTS 19
+        #define MSG_INOUTS 20
         static constexpr InputOutput in_outs[MSG_INOUTS] PROGMEM = {
             {"INPUT", iPower, "CONFIGURE_PANEL_STATUS", "SYSTEM", "SPAD_VIRTUAL_POWER", "UI_TYPE=3,CUSTOM_TYPE=POWER,PANEL=Switches"},
             {"INPUT", iSelRadio, "S_RADIO", "ROTARY", "SPAD_ENCODER_NOACC", "POS_NAMES=NAV1#NAV2#COM1#COM2#ADF,POS_VALUES=0#1#2#3#4,PANEL=Switches"},
-            {"INPUT", iSelCRS, "S_CRS", "ROTARY", "SPAD_ENCODER_NOACC", "POS_NAMES=CRS1#CRS2#GPS,POS_VALUES=0#1#2,PANEL=Switches"},
+            {"INPUT", iSelCRS, "S_CRS", "ROTARY", "SPAD_ENCODER_NOACC", "POS_NAMES=HDG#CRS1#CRS2#GPS,POS_VALUES=0#1#2#3,PANEL=Switches"},
             {"INPUT", iSelAPSpeed, "S_AP_SPEED", "ROTARY", "SPAD_ENCODER_NOACC", "POS_NAMES=SPD_VERT#SPD_AIR,POS_VALUES=0#1,PANEL=Switches"},
             {"INPUT", iSelBaro, "S_BARO", "ROTARY", "SPAD_ENCODER_NOACC", "POS_NAMES=BARO_HPA#BARO_INHG,POS_VALUES=0#1,PANEL=Switches"},
             {"OUTPUT", dModeAP, "L_AP_MASTER", "LED", "SPAD_LED_3COL", "UI_FACE=1,PANEL=LED"},
@@ -80,11 +80,12 @@ class CommsController {
             {"OUTPUT", dModeHDG, "L_AP_HDG", "LED", "SPAD_LED_3COL", "UI_FACE=1,PANEL=LED"},
             {"OUTPUT", dModeALT, "L_AP_ALT", "LED", "SPAD_LED_3COL", "UI_FACE=1,PANEL=LED"},
             {"OUTPUT", dModeVS, "L_AP_VS", "LED", "SPAD_LED_3COL", "UI_FACE=1,PANEL=LED"},
+            {"OUTPUT", dModeIAS, "L_AP_IAS", "LED", "SPAD_LED_3COL", "UI_FACE=1,PANEL=LED"},            
             {"OUTPUT", dModeAPR, "L_AP_APR", "LED", "SPAD_LED_3COL", "UI_FACE=1,PANEL=LED"},
             {"OUTPUT", dValHDG, "D_AP_HDG", "DISPLAY", "SPAD_DISPLAY", "LENGTH=8,ROWS=4,HEIGHT=120,WIDTH=100,PANEL=Display"},
-            {"OUTPUT", dValCRS, "D_AP_CRS", "DISPLAY", "SPAD_DISPLAY", "LENGTH=8,HEIGHT=40,WIDTH=100,PANEL=Display"},
             {"OUTPUT", dValALT, "D_AP_ALT", "DISPLAY", "SPAD_DISPLAY", "LENGTH=8,ROWS=4,HEIGHT=120,WIDTH=100,PANEL=Display"},
-            {"OUTPUT", dValSpeed, "D_AP_SPEED", "DISPLAY", "SPAD_DISPLAY", "LENGTH=5,ROWS=4,HEIGHT=120,WIDTH=100,PANEL=Display"},
+            {"OUTPUT", dValVS, "D_AP_VS", "DISPLAY", "SPAD_DISPLAY", "LENGTH=5,ROWS=4,HEIGHT=120,WIDTH=100,PANEL=Display"},            
+            {"OUTPUT", dValIAS, "D_AP_IAS", "DISPLAY", "SPAD_DISPLAY", "LENGTH=5,ROWS=4,HEIGHT=120,WIDTH=100,PANEL=Display"},
             {"OUTPUT", dValTXPDR, "D_XPDR", "DISPLAY", "SPAD_DISPLAY", "LENGTH=4,HEIGHT=40,WIDTH=100,PANEL=Display"},
             {"OUTPUT", dValBARO, "D_BARO", "DISPLAY", "SPAD_DISPLAY", "LENGTH=5,HEIGHT=40,WIDTH=100,PANEL=Display"},
             {"OUTPUT", dValRFREQ_A, "D_RADIO_ACTIVE_FREQ", "DISPLAY", "SPAD_DISPLAY", "LENGTH=7,HEIGHT=40,WIDTH=150,PANEL=Display"},
@@ -105,7 +106,6 @@ class CommsController {
         static void attachCommandCallbacks();
         static void updateRadioSource(uint8_t selection);
         static void updateCourseSource(uint8_t selection);
-        static void updateSpeedMode(uint8_t selection);
         static void updateBaroMode(uint8_t selection);
         static void processInputData();
 };

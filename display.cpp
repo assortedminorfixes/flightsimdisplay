@@ -76,10 +76,10 @@ int sgn(T val)
 #define LABEL_HDG_POS_X 0
 #define LABEL_HDG_POS_Y 245
 
-#define DATA_CRS_POS_X 160
-#define DATA_CRS_POS_Y 265
-#define LABEL_CRS_POS_X 160
-#define LABEL_CRS_POS_Y 245
+#define DATA_IAS_POS_X 160
+#define DATA_IAS_POS_Y 265
+#define LABEL_IAS_POS_X 160
+#define LABEL_IAS_POS_Y 245
 
 #define DATA_XPDR_POS_X 0
 #define DATA_XPDR_POS_Y 360
@@ -154,18 +154,11 @@ TouchEvent Display::processTouch()
                 }
             }
             // CRS Selector
-            else if (p.y > 235 && p.y < 320 && p.x > 160)
+            else if (p.y > 235 && p.y < 320 && p.x < 160)
             {
                 if (state.debug)
                     lcd.drawCircle(p.x, p.y, 1, HX8357_CYAN);
                 crs_sel = 1;
-            }
-            // Speed Selector
-            else if (p.y > 150 && p.y < 225 && p.x > 160)
-            {
-                if (state.debug)
-                    lcd.drawCircle(p.x, p.y, 1, HX8357_CYAN);
-                speed_sel = 1;
             }
             // Baro Selector
             else if (p.y > 340 && p.y < 415 && p.x > 160)
@@ -184,14 +177,8 @@ TouchEvent Display::processTouch()
         else if (crs_sel > -1)
         {
             state.nav.crs_sel = (state.nav.crs_sel + 1) % this->crs_labels;
-            update.crs = true;
+            update.hdg = true;
             return TouchEvent(TouchEventType::CRS_BUTTON, state.nav.crs_sel);
-        }
-        else if (speed_sel > -1 && update.speed_lbl == false)
-        {
-            state.nav.speed_mode_sel = (state.nav.speed_mode_sel + 1) % this->speed_labels;
-            update.speed = true;
-            return TouchEvent(TouchEventType::SPEED_BUTTON, state.nav.speed_mode_sel);
         }
         else if (baro_sel > -1)
         {
@@ -298,16 +285,18 @@ void Display::redraw(bool full)
         drawRadioSelectButton(state.radio.sel);
     if (update.alt || full)
         drawAltitude();
-    if (update.speed_lbl || full)
-        drawSpeedLabel();
-    if (update.speed || full)
-        drawSpeed();
+    if (update.vs_lbl || full)
+        drawVSLabel();
+    if (update.vs || full)
+        drawVS();
+    if (update.ias_lbl || full)
+        drawIASLabel();
+    if (update.ias || full)
+        drawIAS();
     if (update.hdg || full)
         drawHeading();
     if (update.hdg_lbl || full)
         drawHeadingLabel();
-    if (update.crs || full)
-        drawCourse();
     if (update.xpdr || full)
         drawTransponderCode();
     if (update.baro || full)
@@ -342,74 +331,104 @@ void Display::drawAltitude()
     update.alt = false;
 }
 
-void Display::updateSpeed()
+void Display::updateVS()
 {
-    update.speed = true;
+    update.vs = true;
 }
 
-void Display::updateSpeedLabel()
+void Display::updateVSLabel()
 {
-    update.speed_lbl = true;
-    update.speed = true;
+    update.vs_lbl = true;
+    update.vs = true;
 }
 
-void Display::drawSpeedLabel()
+void Display::drawVSLabel()
 {
-    if (state.nav.speed.label.length() > 0)
+    if (state.nav.vs.label.length() > 0)
     {
-        this->drawLabel(LABEL_SPEED_POS_X, LABEL_SPEED_POS_Y, state.nav.speed.label);
+        this->drawLabel(LABEL_SPEED_POS_X, LABEL_SPEED_POS_Y, state.nav.vs.label);
     }
     else
     {
-        this->drawLabel(LABEL_SPEED_POS_X, LABEL_SPEED_POS_Y, SPEED_LABEL[state.nav.speed_mode_sel]);
+        this->drawLabel(LABEL_SPEED_POS_X, LABEL_SPEED_POS_Y, VS_LABEL[0]);
     }
-    update.speed_lbl = false;
+    update.vs_lbl = false;
 }
 
-void Display::drawSpeed()
+void Display::drawVS()
 {
     GFXcanvas1 canvas(CANVAS_NUM_W, CANVAS_NUM_H);
     canvas.setFont(font_mono_val_s.normal);
     canvas.setCursor(CANVAS_NUM_UL_X, CANVAS_NUM_UL_Y);
-    if (state.nav.speed_mode_sel == 0)
-    {
-        if (state.nav.speed.dashes)
-        {
-            printDash(5, &canvas, &font_mono_val_s);
-        }
-        else if (fabsf(state.nav.speed.value) > 10.0) // VS
-        {
-            this->trimDecimal(state.nav.speed.value, 4, 0, false, true, CANVAS_NUM_UL_X, CANVAS_NUM_UL_Y, &canvas, &font_mono_val_s);
-        }
-        else // FPA
-        {
-            this->trimDecimal(state.nav.speed.value, 1, 1, false, true, CANVAS_NUM_UL_X, CANVAS_NUM_UL_Y, &canvas, &font_mono_val_s);
-        }
-    }
-    else if (state.nav.speed_mode_sel == 1)
-    {
-        if (state.nav.speed.value > 0 and state.nav.speed.value < 5)
-        {
-            this->trimDecimal(state.nav.speed.value, 1, 2, false, false, CANVAS_NUM_UL_X, CANVAS_NUM_UL_Y, &canvas, &font_mono_val_s);
-        }
-        else if (state.nav.speed.value >= 5)
-        {
-            canvas.printf("%3i", (uint16_t)state.nav.speed.value); // IAS
-        }
-        else
-        {
-            printDash(3, &canvas, &font_mono_val_s);
-        }
 
-        if (state.nav.speed.dot == true)
-        {
-            canvas.setFont(font_mono_val_s.dot);
-            canvas.printf(SYM_DOT);
-        }
+    if (state.nav.vs.dashes)
+    {
+        printDash(5, &canvas, &font_mono_val_s);
+    }
+    else if (fabsf(state.nav.vs.value) > 10.0) // VS
+    {
+        this->trimDecimal(state.nav.vs.value, 4, 0, false, true, CANVAS_NUM_UL_X, CANVAS_NUM_UL_Y, &canvas, &font_mono_val_s);
+    }
+    else // FPA
+    {
+        this->trimDecimal(state.nav.vs.value, 1, 1, false, true, CANVAS_NUM_UL_X, CANVAS_NUM_UL_Y, &canvas, &font_mono_val_s);
     }
 
     lcd.drawBitmap(DATA_SPEED_POS_X, DATA_SPEED_POS_Y, canvas.getBuffer(), CANVAS_NUM_W, CANVAS_NUM_H, HX8357_CYAN, HX8357_BLACK);
-    update.speed = false;
+    update.vs = false;
+}
+
+void Display::updateIAS()
+{
+    update.ias = true;
+}
+
+void Display::updateIASLabel()
+{
+    update.ias_lbl = true;
+    update.ias = true;
+}
+
+void Display::drawIASLabel()
+{
+    if (state.nav.ias.label.length() > 0)
+    {
+        this->drawLabel(LABEL_IAS_POS_X, LABEL_IAS_POS_Y, state.nav.ias.label);
+    }
+    else
+    {
+        this->drawLabel(LABEL_IAS_POS_X, LABEL_IAS_POS_Y, IAS_LABEL[0]);
+    }
+    update.ias_lbl = false;
+}
+
+void Display::drawIAS()
+{
+    GFXcanvas1 canvas(CANVAS_NUM_LARGE_W, CANVAS_NUM_LARGE_H);
+    canvas.setFont(font_mono_val_l.normal);
+    canvas.setCursor(5, 45);
+
+    if (state.nav.ias.value > 0 and state.nav.ias.value < 5)
+    {
+        this->trimDecimal(state.nav.ias.value, 1, 2, false, false, CANVAS_NUM_UL_X, CANVAS_NUM_UL_Y, &canvas, &font_mono_val_l);
+    }
+    else if (state.nav.ias.value >= 5)
+    {
+        canvas.printf("%3i", (uint16_t)state.nav.ias.value); // IAS
+    }
+    else
+    {
+        printDash(3, &canvas, &font_mono_val_l);
+    }
+
+    if (state.nav.ias.dot == true)
+    {
+        canvas.setFont(font_mono_val_l.dot);
+        canvas.printf(SYM_DOT);
+    }
+
+    lcd.drawBitmap(DATA_IAS_POS_X, DATA_IAS_POS_Y, canvas.getBuffer(), CANVAS_NUM_LARGE_W, CANVAS_NUM_LARGE_H, HX8357_CYAN, HX8357_BLACK);
+    update.ias = false;
 }
 
 void Display::updateHeading()
@@ -465,44 +484,9 @@ void Display::drawHeadingLabel()
     }
     else
     {
-        this->drawLabel(LABEL_HDG_POS_X, LABEL_HDG_POS_Y, HEADING_LABEL[0]);
+        this->drawLabel(LABEL_HDG_POS_X, LABEL_HDG_POS_Y, CRS_LABEL[state.nav.crs_sel]);
     }
     update.hdg_lbl = false;
-}
-
-void Display::updateCourse()
-{
-    update.crs = true;
-}
-
-void Display::updateCourseLabel(uint8_t selection)
-{
-    lcd.setFont(font_var_lbl.normal);
-    lcd.setTextColor(HX8357_BLACK);
-    lcd.setCursor(165, 260);
-    lcd.printf("Course %s ", CRS_LABEL[(selection + (this->crs_labels - 1)) % this->crs_labels]);
-
-    lcd.setTextColor(HX8357_GREEN);
-    lcd.setCursor(165, 260);
-    lcd.printf("Course %s ", CRS_LABEL[selection]);
-}
-
-void Display::drawCourse()
-{
-    int16_t print_crs;
-    if (state.nav.crs == 0)
-        print_crs = 360;
-    else
-        print_crs = state.nav.crs;
-
-    GFXcanvas1 canvas(CANVAS_NUM_LARGE_W, CANVAS_NUM_LARGE_H);
-    canvas.setFont(font_mono_val_l.normal);
-    canvas.setCursor(5, 45);
-    canvas.printf("%03i", print_crs);
-    canvas.setFont(font_mono_val_l.deg);
-    canvas.printf(SYM_DEG);
-    lcd.drawBitmap(DATA_CRS_POS_X, DATA_CRS_POS_Y, canvas.getBuffer(), CANVAS_NUM_LARGE_W, CANVAS_NUM_LARGE_H, HX8357_CYAN, HX8357_BLACK);
-    update.crs = false;
 }
 
 void Display::updateTransponderCode()
