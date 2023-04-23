@@ -131,7 +131,9 @@ void CommsController::onIdentifyRequest()
 
     if (strcmp(szRequest, "SCANSTATE") == 0)
     {
-        char *str = messenger.readStringArg();
+        
+        // Wait before responding to SCANSTATE
+        delay(STARTUP_DELAY);
 
         messenger.sendCmd(kRequest, F("STATESCAN,1"));
 

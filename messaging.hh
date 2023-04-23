@@ -6,7 +6,8 @@
 #include "featherwing_touch.hh"
 #include "state.hh"
 
-#define MESSAGING_DELAY 10
+#define MESSAGING_DELAY 20
+#define STARTUP_DELAY 2500
 
 //// ------   Spad Coms Section ------ ///////
 static CmdMessenger messenger(Serial);
