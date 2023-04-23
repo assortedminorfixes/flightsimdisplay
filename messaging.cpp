@@ -117,6 +117,7 @@ void CommsController::onIdentifyRequest()
             messenger.sendCmdArg(in_outs[i].inherit);
             messenger.sendCmdArg(in_outs[i].args);
             messenger.sendCmdEnd();
+            delay(MESSAGING_DELAY);
         }
 
         // tell SPAD.neXT we are done with config
@@ -136,15 +137,19 @@ void CommsController::onIdentifyRequest()
 
         // Send Virtual Power off.
         sendInput(iPower, 0, F("Power change: "));
+        delay(MESSAGING_DELAY);
 
         // Provides currently selected Radio
         updateRadioSource(state.radio.sel);
+        delay(MESSAGING_DELAY);
 
         // Provides currently selected CRS
         updateCourseSource(state.nav.crs_sel);
+        delay(MESSAGING_DELAY);
 
         // Provides currently selected Baro mode
         updateBaroMode(state.nav.baro_mode_sel);
+        delay(MESSAGING_DELAY);
 
         messenger.sendCmd(kRequest, F("STATESCAN,2"));
         return;
