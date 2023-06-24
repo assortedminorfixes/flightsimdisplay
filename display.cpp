@@ -40,6 +40,8 @@ int sgn(T val)
 #define CANVAS_NUM_UL_Y 35
 #define CANVAS_NUM_LARGE_H 50
 #define CANVAS_NUM_LARGE_W 160
+#define CANVAS_NUM_LARGE_UL_X 5
+#define CANVAS_NUM_LARGE_UL_Y 45
 #define CANVAS_CENTER_H 60
 #define CANVAS_CENTER_W 200
 #define CANVAS_LABEL_H 20
@@ -406,13 +408,13 @@ void Display::drawIAS()
 {
     GFXcanvas1 canvas(CANVAS_NUM_LARGE_W, CANVAS_NUM_LARGE_H);
     canvas.setFont(font_mono_val_l.normal);
-    canvas.setCursor(5, 45);
+    canvas.setCursor(CANVAS_NUM_LARGE_UL_X, CANVAS_NUM_LARGE_UL_Y);
 
-    if (state.nav.ias.value > 0 and state.nav.ias.value < 5)
+    if (state.nav.ias.value > 0 and state.nav.ias.value <= 2)
     {
-        this->trimDecimal(state.nav.ias.value, 1, 2, false, false, CANVAS_NUM_UL_X, CANVAS_NUM_UL_Y, &canvas, &font_mono_val_l);
+        this->trimDecimal(state.nav.ias.value, 1, 2, false, false, CANVAS_NUM_LARGE_UL_X, CANVAS_NUM_LARGE_UL_Y, &canvas, &font_mono_val_l);
     }
-    else if (state.nav.ias.value >= 5)
+    else if (state.nav.ias.value > 2)
     {
         canvas.printf("%3i", (uint16_t)state.nav.ias.value); // IAS
     }
@@ -451,7 +453,7 @@ void Display::drawHeading()
 
     GFXcanvas1 canvas(CANVAS_NUM_LARGE_W, CANVAS_NUM_LARGE_H);
     canvas.setFont(font_mono_val_l.normal);
-    canvas.setCursor(5, 45);
+    canvas.setCursor(CANVAS_NUM_LARGE_UL_X, CANVAS_NUM_LARGE_UL_Y);
     if (state.nav.hdg.dashes == true || state.nav.hdg.value < 0)
     {
         printDash(3, &canvas, &font_mono_val_l);
