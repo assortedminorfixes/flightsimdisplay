@@ -1,5 +1,5 @@
 #include "Arduino.h"
-#include "display.hh"
+#include "lores_display.hh"
 #include "lights.hh"
 #include "messaging.hh"
 
@@ -12,6 +12,16 @@ void CommsController::sendCmdDebugMsg(uint8_t command, uint8_t idx, T arg)
         disp.printLastCommand(command, idx, static_cast<int32_t>(arg));
 
     if (state.serial_debug)        
+        messenger.sendCmd(kDebug, arg);
+}
+
+template <>
+void CommsController::sendCmdDebugMsg<const char*>(uint8_t command, uint8_t idx, const char* arg)
+{
+    if (state.debug && state.isReady()) 
+        disp.printLastCommand(command, idx, arg);
+
+    if (state.serial_debug)
         messenger.sendCmd(kDebug, arg);
 }
 
@@ -63,20 +73,21 @@ void CommsController::onIdentifyRequest()
         state.power = false;
         state.configured = false;
 
-        uint8_t apiVersion = messenger.readInt32Arg();
+        if(messenger.readInt32Arg())
+        ; // uint8_t apiVersion
         String spadVersion = messenger.readStringArg();
         String spadAuthToken = messenger.readStringArg();
 
         messenger.sendCmdStart(kRequest);
         messenger.sendCmdArg(F("SPAD"));                                   // Serial Protocol
-        messenger.sendCmdArg(F("{7eb4b953-64c6-4c94-a958-1fac034a0370}")); // Device GUID
-        messenger.sendCmdArg(F("SimDisplay"));                             // Device Display Name
+        messenger.sendCmdArg(F("{7432c03c-ebc0-4aa6-b108-de06e30ca10a}")); // Device GUID
+        messenger.sendCmdArg(F("AP_GFC600_Display"));                             // Device Display Name
         messenger.sendCmdArg(2);                                           // SPAD.NEXT Serial Version
         messenger.sendCmdArg(F("0.3"));                                    // FW Version
-        messenger.sendCmdArg(F("AUTHOR=1683e5ce90820838a39d0d3990f4c266"));
+        messenger.sendCmdArg(F("AUTHOR=aea714065890bf70fe52c90206ba09f2"));
         messenger.sendCmdArg(F("ALLOWLOCAL=0"));
         messenger.sendCmdArg(F("PID=SIMDISPLAY")); // Device ID
-        messenger.sendCmdArg(F("VID=LARSLL"));     // Author ID
+        messenger.sendCmdArg(F("VID=SHIMAVAK"));     // Author ID
         messenger.sendCmdEnd();
 
         return;
@@ -103,11 +114,11 @@ void CommsController::onIdentifyRequest()
         messenger.sendCmdArg("NO_LED_CLEAR=1");
         messenger.sendCmdArg("VPSUPPORT=1");
         messenger.sendCmdArg("UI_TYPE=0");
-        messenger.sendCmdArg("DEFAULT_PANEL=Switches");
+        messenger.sendCmdArg("DEFAULT_PANEL=Display");
         messenger.sendCmdEnd();
 
         // Expose Inputs and Outputs
-        for (int i = 0; i < MSG_INOUTS; i++)
+        for (uint i = 0; i < sizeof(in_outs)/sizeof(in_outs[0]); i++)
         {
             messenger.sendCmdStart(kRequest);
             messenger.sendCmdArg(in_outs[i].io);
@@ -141,6 +152,7 @@ void CommsController::onIdentifyRequest()
         sendInput(iPower, 0, F("Power change: "));
         delay(MESSAGING_DELAY);
 
+        /*
         // Provides currently selected Radio
         updateRadioSource(state.radio.sel);
         delay(MESSAGING_DELAY);
@@ -152,6 +164,7 @@ void CommsController::onIdentifyRequest()
         // Provides currently selected Baro mode
         updateBaroMode(state.nav.baro_mode_sel);
         delay(MESSAGING_DELAY);
+        */
 
         messenger.sendCmd(kRequest, F("STATESCAN,2"));
         return;
@@ -162,31 +175,48 @@ void CommsController::onEvent()
 {
     char *szRequest = messenger.readStringArg();
 
+    char *str = NULL;
+
     if (strcmp(szRequest, "VIRTUALPOWER") == 0)
         state.power = messenger.readBoolArg();
     else if (strcmp(szRequest, "PROFILECHANGED") == 0)
-        char *str = messenger.readStringArg();
+        str = messenger.readStringArg();
     else if (strcmp(szRequest, "PROFILECHANGING") == 0)
-        char *str = messenger.readStringArg();
+        str = messenger.readStringArg();
     else if (strcmp(szRequest, "PROVIDER") == 0)
-        char *str = messenger.readStringArg();
+        str = messenger.readStringArg();
     else if (strcmp(szRequest, "AIRCRAFTCHANGED") == 0)
-        char *str = messenger.readStringArg();
+        str = messenger.readStringArg();
     else if (strcmp(szRequest, "PAGE") == 0)
-        char *str = messenger.readStringArg();
+        str = messenger.readStringArg();
     else if (strcmp(szRequest, "START") == 0)
         state.start_time = millis();
     else if (strcmp(szRequest, "GAMESTATE") == 0)
-        char *str = messenger.readStringArg();
+        str = messenger.readStringArg();
+
+    if(str != NULL && state.debug)
+    {
+        disp.printDebug(String(str));
+    }
         
     // Ensure everything has been read in.
+    //while (messenger.readStringArg()[0] != '\0');
     while (messenger.available())
-        char *arg = messenger.readStringArg();
+    {
+        if(messenger.readStringArg());
+    }
 
 }
 
-void CommsController::updateDisplayField(DisplayField* field, uint8_t row) {
-    switch(row){
+void CommsController::updateDisplayField(DisplayField *field, uint8_t row)
+{
+    field->vtype = row;
+    updateDisplayField(field);
+}
+
+void CommsController::updateDisplayField(DisplayField* field) {
+    switch(field->vtype){
+
         case 0:
             field->value = messenger.readFloatArg();
             break;
@@ -209,10 +239,48 @@ void CommsController::onData()
     if (messenger.commandID() == kDisplay)
     {
         // Clear next two fields for DISPLAY input.
-        uint8_t dataIdx = messenger.readInt16Arg();
-        uint8_t row = messenger.readInt16Arg();
+        int16_t dataIdx = messenger.readInt16Arg();
+        int16_t row = messenger.readInt16Arg();
+        int16_t command = messenger.readInt16Arg();
+        const char *val = messenger.readStringArg();
 
-        if (messenger.readInt16Arg() == 2)
+        sendCmdDebugMsg(messenger.commandID(), dataIdx, val);
+        #if defined(USE_LORES_DISPLAY)
+        switch(dataIdx){
+            case dLatMode:
+                disp.LatMode_TextBox.update(val, command);
+                break;
+            case dLatModeValue:
+                disp.LatModeValue_TextBox.update(val, command);
+                break;
+            case dLatModeArm:
+                disp.LatModeArm_TextBox.update(val, command);
+                break;
+            case dVertMode:
+                disp.VertMode_TextBox.update(val, command);
+                break;
+            case dVertModeValue:
+                disp.VertModeValue_TextBox.update(val, command);
+                break;
+            case dVertModeUnits:
+                disp.VertModeUnits_TextBox.update(val, command);
+                break;
+            case dVertModeArmLeft:
+                disp.VertModeArmLeft_TextBox.update(val, command);
+                break;
+            case dVertModeArmLeftSpecialMode:
+                if (row == 1)
+                    disp.VertModeArmLeftSpecialMode_TextBox.update(val, command);
+                else
+                    disp.VertModeArmLeftSpecialMode_TextBox.updateALT(atoi(val), command);
+                break;
+            case dVertModeArmRight:
+                disp.VertModeArmRight_TextBox.update(val, command);
+                break;
+        }
+        #endif // USE_LORES_DISPLAY
+        #ifdef USE_HIRES_DISPLAY
+        if (command == 2)
         {
             if (dataIdx == dValALT)
             {
@@ -270,11 +338,15 @@ void CommsController::onData()
         {
             messenger.sendCmd(kDebug, "Unknown DATA index " + String(dataIdx) + "."); // Writing the Spad Log that we turned the FD Annunciator ON...
         }
+        #endif // USE_HIRES_DISPLAY
         // Ensure everything has been read in.
-        while (messenger.available())
+        //while (messenger.readStringArg()[0] != '\0');
+        // Get rid of linker warnings
+        while(messenger.available())
         {
-            char *arg = messenger.readStringArg();
+            if(messenger.readStringArg());
         }
+        
     }
 }
 
@@ -301,6 +373,10 @@ void CommsController::onLED()
             ls.color = LightColor::GREEN;
         }
     }
+
+    sendCmdDebugMsg(messenger.commandID(), dataIdx, enable);
+
+    return;
 
     switch (dataIdx)
     {
@@ -333,8 +409,6 @@ void CommsController::onLED()
     default:
         break;
     }
-
-    sendCmdDebugMsg(messenger.commandID(), dataIdx, enable);
 }
 
 // Define callbacks for the different SPAD command sets
@@ -349,7 +423,8 @@ void CommsController::attachCommandCallbacks()
     messenger.attach(kLED, onLED);
 }
 
-void CommsController::sendInput(uint8_t input, uint8_t selection, String msg)
+template <class T>
+void CommsController::sendInput(uint8_t input, T selection, String msg)
 {
     // Provides currently selected Radio
     messenger.sendCmdStart(kInput);
@@ -362,6 +437,18 @@ void CommsController::sendInput(uint8_t input, uint8_t selection, String msg)
         disp.printDebug(msg + selection + "  ");
     }
 }
+
+void CommsController::updateEncoder1(int32_t val){
+    String msg = F("Encoder1 Change: ");
+    sendInput(iEncoder1, val, msg);
+}
+
+
+void CommsController::updateButton1(bool _state){
+    String msg = F("Button1 Change: ");
+    sendInput(iEncoder1Btn, _state, msg);
+}
+
 
 void CommsController::updateRadioSource(uint8_t selection)
 {

@@ -12,10 +12,19 @@
 #define TFT_DC 33
 #define SD_CS 14
 #elif defined(TEENSYDUINO)
-#define TFT_DC 10
-#define TFT_CS 4
+#define TFT_DC 15
+#define TFT_CS 13
+#define TFT_DIN 8
+#define TFT_RST 12
+#define TFT_DOUT 11
+#define TFT_CLK 14
 #define STMPE_CS 3
 #define SD_CS 8
+
+#define ENC1P1 0
+#define ENC1P2 1
+#define ENC1SW1 2
+
 #elif defined(ARDUINO_STM32_FEATHER)
 #define TFT_DC PB4
 #define TFT_CS PA15
@@ -39,12 +48,13 @@
 #define SD_CS 5
 #endif
 
-#define TFT_RST -1
 
 #define TS_MINX 150
 #define TS_MINY 130
 #define TS_MAXX 3800
 #define TS_MAXY 4000
+
+#define DEBOUNCETIME 30
 
 #define TS_DOUBLETOUCH_DELAY 150
 

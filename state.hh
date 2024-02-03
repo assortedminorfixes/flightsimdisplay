@@ -8,6 +8,7 @@ struct DisplayField
   float_t value = 0;
   bool dashes = false;
   bool dot = false;
+  uint8_t vtype = 3;
   String label;
   String out;
 
@@ -66,7 +67,7 @@ struct State
   bool display_static = false;
   bool display_off = false;
   bool configured = false;
-  bool debug = true;
+  bool debug = false;
   bool serial_debug = false;
 
   bool isReady()

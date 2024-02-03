@@ -1,27 +1,40 @@
-/*
- Inspired by Spad.Next Serial Interface v1 Simple Autopilot by Les O'Reilly .
- Using Adafruit Feather with 3.5" Touch Wing.
- Display is 'passive' with exception of touch to change radio and
- Button inputs are separate using a Leo Bodnar BBI-32.
+#include <Arduino.h>
+#include <usb_desc.h>
 
- Current version is extensively using the SUBCRIBE patten in Spad.Next Serial.
- Data Values used can be found in messaging.cpp; it is using Simconnect values
- to improve compatibility.
+#include <GU_K61NA4.h>
+#include "Serial_GFX.h"
 
- Display is based on the B612 font (https://github.com/polarsys/b612), converted for
- use with Adafruit GFX using fontconvert.
-*/
-#include "featherwing_touch.hh"
-#include "state.hh"
-#include "display.hh"
-#include "messaging.hh"
-#include "lights.hh"
+// #include <Fonts/FreeSansOblique18pt7b.h>
 
+/******
+ * Connect display to Arduino using these pins:
+ * VFD pin  | Name  | Arduino I/O
+ * ------------------------------
+ *  2       | SIN   | 3
+ *  4       | SBUSY | 4
+ *  5       | SCK   | 5
+ *  6       | RESET | 6
+ *
+ */
 
-Display disp{};
-LightController lights{};
+// GU126X32_K612A4 vfd(4, 6, 10);
+
+// Serial_GFX vfd(320, 480);
+
+#include "flightsimdisplay/featherwing_touch.hh"
+#include "flightsimdisplay/state.hh"
+#include "flightsimdisplay/lores_display.hh"
+#include "flightsimdisplay/messaging.hh"
+// #include "flightsimdisplay/lights.hh"
+
+Lores_Display disp{};
+// LightController lights{};
 CommsController comms{};
 struct State state;
+
+uint32_t encoders_changed = 0;
+
+u_int FULLREDRAWTIME = 1000 * 60; // Full redraw every minute to handly any graphical glitches
 
 void setup()
 {
@@ -32,11 +45,16 @@ void setup()
   // Initialize the Display including Touch
   disp.initDisplay();
 
+  state.debug = true;
+  disp.printSerial();
+
+  disp.disp_device.liveMode = true;
+
   // Attach my application's user-defined callback methods
   comms.attachCommandCallbacks();
 
   // Initialize Lights
-  lights.initLights();
+  // lights.initLights();
 }
 
 // Start up the Main Loop Function
@@ -49,6 +67,7 @@ void loop()
   // process touches and perform updates to display and lights.
   if (state.configured && state.power && state.display_static && state.isReady())
   {
+    /*
     if ((millis() - state.last_touch) > TS_DOUBLETOUCH_DELAY)
     {
       TouchEvent te = disp.processTouch();
@@ -67,6 +86,8 @@ void loop()
           comms.updateBaroMode(te.value);
           disp.updateBarometerLabel(te.value);
           break;
+        default:
+          break;
         }
         state.last_touch = millis();
       }
@@ -75,9 +96,37 @@ void loop()
     {
       disp.clearTouch();
     }
+    */
 
-    disp.redraw();
-    lights.update();
+    // Update inputs from encoders
+    /*  Consider elegant solution for more encoders later.
+    encoders_changed = disp.checkEncoders();
+    for(uint8_t i=0; i<disp.nEncoders && encoders_changed != 0; i++){
+      if(encoders_changed & 1)
+        comms.updateEncoder(disp.readAndResetEncoder(i), i);
+      encoders_changed >>=1;
+    }
+    */
+
+    if (disp.checkEncoders() != 0)
+    {
+      comms.updateEncoder1(disp.Encoder1.readAndReset() / 4);
+    }
+
+    if (disp.button1.update())
+    {
+      comms.updateButton1(disp.button1.fallingEdge());
+    }
+
+    if (millis() - disp.lastFullRedraw > FULLREDRAWTIME)
+    {
+      disp.printStatic();
+      disp.redraw(true);
+    }
+    else
+      disp.redraw();
+
+    // lights.update();
 
     if (state.debug)
       disp.printMem();
@@ -89,21 +138,19 @@ void loop()
   else if (state.configured && state.power && !state.display_static && state.isReady())
   {
     disp.printStatic();
-    disp.updateHeadingLabel();
-    disp.updateVSLabel();
-    disp.updateIASLabel();
-    disp.updateBarometerLabel(state.nav.baro_mode_sel);
-    disp.updateHeadingLabel();
     disp.redraw(true);
+    disp.Encoder1.write(0);
   }
 
   // If virtual power is off, but the off splash is not printed,
   // then print the off splash.
   else if (state.configured && !state.power && !state.display_off && state.isReady())
   {
-    disp.printSplash(F("-"));
-    lights.update();
+    disp.printSplash(F("POWER OFF"));
+    // lights.update();
     state.display_off = true;
   }
+
+  disp.printSerial();
 
 } // End of the Main Loop
